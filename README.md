@@ -17,7 +17,7 @@ The file `runner_aa_eval` runs `AutoAttack`(AA). Passing `fullaa 1` runs complet
 
 ##### Checkpoints - ImageNet $\ell_{\infty} = 4/255$ robust models.
 The link location includes the clean model (the one used as init for AT), the robust model, and the `full-AA` log for $\ell_{\infty}, \ell_2$ and $\ell_1$ attacks.</br>
-| Model-Name           |  Location(Link) |
+| Model-Name           |  Location (Link) |
 | :---                 |     :------:    |   
 | ConvNext-iso-CvSt    |      [Link](https://nc.mlcloud.uni-tuebingen.de/index.php/s/HpNbkLTNTBiaeo8)|
 | ViT-S-CvSt           |      [Link](https://nc.mlcloud.uni-tuebingen.de/index.php/s/agtDw3D7QXbDCmw)|
