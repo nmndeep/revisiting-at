@@ -1,4 +1,4 @@
-'''Main runnable file for imagenet experiments
+'''Main runnable file for imagenet experiments - tested for multi-gpu training
 '''
 
 import sys
