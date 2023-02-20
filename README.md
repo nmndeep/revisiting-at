@@ -13,4 +13,4 @@ The code does standard APGD adversarial trainining. The file `utils_architecture
 
 #### Evaluating a model
 The file `runner_aa_eval` runs `AutoAttack`(AA). Passing `fullaa 1` runs complete AA whereas `fullaa 0` runs the first two attacks in AA.
-The best checkpoints for the models in paper will be added soon
+The best checkpoints for the models in the paper will be added soon
