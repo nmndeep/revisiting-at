@@ -1,4 +1,4 @@
-'''Helper script to generat the parameter values for augmentations
+'''Helper script to generate the parameter values for augmentations
 '''
 
 import argparse
