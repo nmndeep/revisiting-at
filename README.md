@@ -22,6 +22,8 @@ The link location includes the clean model (the one used as init for AT), the ro
 | ConvNext-iso-CvSt    |      [Link](https://nc.mlcloud.uni-tuebingen.de/index.php/s/HpNbkLTNTBiaeo8)|
 | ViT-S-CvSt           |      [Link](https://nc.mlcloud.uni-tuebingen.de/index.php/s/agtDw3D7QXbDCmw)|
 | ConvNext-T-CvSt      |      [Link](https://nc.mlcloud.uni-tuebingen.de/index.php/s/BFLoMrMdn8iBk7Y)|
+| ViT-M-CvSt           |      [Link](https://nc.mlcloud.uni-tuebingen.de/index.php/s/q2mkEYtq5Zjpa4e)|
+| ConvNext-S-CvSt      |      [Link](https://nc.mlcloud.uni-tuebingen.de/index.php/s/m3bAwNg4CJY4jrp)|
 | ViT-B-CvSt           |      [Link](https://nc.mlcloud.uni-tuebingen.de/index.php/s/SbN5AJAicdZJXyr)|
 | ConvNext-B-CvSt      |      [Link](https://nc.mlcloud.uni-tuebingen.de/index.php/s/RQBEXagC7R7XweX)|
 
