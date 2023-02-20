@@ -6,12 +6,10 @@ sys.path.insert(0,'..')
 from math import ceil
 import math
 import numpy as np
-import os, sys
+import os
 from os import get_terminal_size
-from timm.loss.cross_entropy import SoftTargetCrossEntropy
-from timm.models import create_model
 from datetime import datetime
-import argparse, sys, torch
+import argparse
 import torch.nn as nn
 import torch.optim as optim
 from torchinfo import summary
@@ -29,7 +27,6 @@ ch.autograd.profiler.profile(False)
 import argparse
 import parserr
 from dataset_convnext_like import build_dataset
-from timm.loss import JsdCrossEntropy, SoftTargetCrossEntropy, BinaryCrossEntropy
 import torchvision
 from torchvision import models
 import torchmetrics
@@ -48,16 +45,11 @@ from fastargs.decorators import param
 from fastargs import Param, Section
 from fastargs.validation import And, OneOf
 
-from ffcv.pipeline.operation import Operation
-from ffcv.loader import Loader, OrderOption
-from ffcv.transforms import ToTensor, ToDevice, Squeeze, NormalizeImage, \
-    RandomHorizontalFlip, ToTorchImage, Convert
-from ffcv.fields.rgb_image import CenterCropRGBImageDecoder, \
-    RandomResizedCropRGBImageDecoder
-from ffcv.fields.basics import IntDecoder
+
 import timm
-from timm.loss import SoftTargetCrossEntropy
+from timm.loss import JsdCrossEntropy, SoftTargetCrossEntropy, BinaryCrossEntropy
 from timm.data.mixup import Mixup
+from timm.models import create_model
 
 from autopgd_train_clean import apgd_train
 from fgsm_train import fgsm_train, fgsm_attack
@@ -72,7 +64,6 @@ warnings.filterwarnings("ignore", category=FutureWarning)
 # warnings.filterwarnings("ignore", category=UserWarning)
 os.environ['KMP_WARNINGS'] = 'off'
 os.environ["CUDA_DEVICE_ORDER"]="PCI_BUS_ID"
-# os.environ["PL_TORCH_DISTRIBUTED_BACKEND"] = "gloo"
 
 class LabelSmoothingCrossEntropy(nn.Module):
     """ NLL loss with label smoothing.
@@ -506,54 +497,9 @@ class ImageNetTrainer:
     def create_val_loader(self, val_dataset, num_workers, batch_size,
                           resolution, precision, distributed, use_channel_last
                           ):
-        this_device = f'cuda:{self.gpu}'
-        # val_path = Path(val_dataset)
-        data_paths = ['']
-        for data_path in data_paths:
-                if os.path.exists(data_path):
-                    val_path = Path(data_path)
-                    break
-        assert val_path.is_file()
-        res_tuple = (resolution, resolution)
-        prec = PREC_DICT[precision]
-        cropper = CenterCropRGBImageDecoder(res_tuple, ratio=DEFAULT_CROP_RATIO)
-        if use_channel_last:
-            image_pipeline = [
-                cropper,
-                ToTensor(),
-                ToDevice(ch.device(this_device), non_blocking=True),
-                ToTorchImage(),
-                NormalizeImage(NONORM_MEAN, NONORM_STD, #IMAGENET_MEAN, IMAGENET_STD
-                    prec)
-            ]
-        else:
-            image_pipeline = [
-                cropper,
-                ToTensor(),
-                ToDevice(ch.device(this_device), non_blocking=True),
-                ToTorchImage(channels_last=False),
-                Convert(ch.cuda.FloatTensor),
-                torchvision.transforms.Normalize([0., 0., 0.], [255., 255., 255.]),
-            ]
-
-        label_pipeline = [
-            IntDecoder(),
-            ToTensor(),
-            Squeeze(),
-            ToDevice(ch.device(this_device),
-            non_blocking=True)
-        ]
-
-        loader = Loader(val_dataset,
-                        batch_size=batch_size,
-                        num_workers=num_workers,
-                        order=OrderOption.SEQUENTIAL,
-                        drop_last=False,
-                        pipelines={
-                            'image': image_pipeline,
-                            'label': label_pipeline
-                        },
-                        distributed=distributed)
+        '''Validations stats are not computed during training - to save time and compute'''
+       
+        loader = None
         return loader
 
     @param('training.epochs')
@@ -563,14 +509,14 @@ class ImageNetTrainer:
     @param('adv.attack')
 
     def train(self, epochs, log_level, save_freq, ckpt_path, attack):
-        vall, nums = self.single_val()
-        if log_level > 0:
-            val_dict = {
-                'Validation acc': vall.item(),
-                'points': nums
-            }
-            if self.gpu == 0:
-                self.log(val_dict)
+#         vall, nums = self.single_val()
+#         if log_level > 0:
+#             val_dict = {
+#                 'Validation acc': vall.item(),
+#                 'points': nums
+#             }
+#             if self.gpu == 0:
+#                 self.log(val_dict)
 
         for epoch in range(epochs):
             #print(f'epoch {epoch}')
