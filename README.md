@@ -13,4 +13,15 @@ The code does standard APGD adversarial trainining. </br>The file `utils_archite
 
 #### Evaluating a model
 The file `runner_aa_eval` runs `AutoAttack`(AA). Passing `fullaa 1` runs complete AA whereas `fullaa 0` runs the first two attacks in AA.</br>
-The best checkpoints for the models in the paper will be added soon
+
+
+##### Checkpoints - ImageNet $\ell_{\infty} = 4/255$ robust models.
+The link location includes the clean model (the one used as init for AT), the robust model, and the `full-AA` log for $\ell_{\infty}, \ell_2$ and $\ell_1$ attacks.</br>
+| Model-Name           |  Location(Link) |
+| :---                 |     :------:    |   
+| ConvNext-iso-CvSt    |      [Link](https://nc.mlcloud.uni-tuebingen.de/index.php/s/HpNbkLTNTBiaeo8)|
+| ViT-S-CvSt           |      [Link](https://nc.mlcloud.uni-tuebingen.de/index.php/s/agtDw3D7QXbDCmw)|
+| ConvNext-T-CvSt      |      [Link](https://nc.mlcloud.uni-tuebingen.de/index.php/s/BFLoMrMdn8iBk7Y)|
+| ViT-B-CvSt           |      [Link](https://nc.mlcloud.uni-tuebingen.de/index.php/s/SbN5AJAicdZJXyr)|
+| ConvNext-B-CvSt      |      [Link](https://nc.mlcloud.uni-tuebingen.de/index.php/s/RQBEXagC7R7XweX)|
+
