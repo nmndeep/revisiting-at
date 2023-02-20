@@ -15,7 +15,7 @@ The code does standard APGD adversarial trainining. </br>The file `utils_archite
 The file `runner_aa_eval` runs `AutoAttack`(AA). Passing `fullaa 1` runs complete AA whereas `fullaa 0` runs the first two attacks in AA.</br>
 
 
-##### Checkpoints - ImageNet $\ell_{\infty} = 4/255$ robust models.
+#### Checkpoints - ImageNet $\ell_{\infty} = 4/255$ robust models.
 The link location includes the clean model (the one used as init for AT), the robust model, and the `full-AA` log for $\ell_{\infty}, \ell_2$ and $\ell_1$ attacks.</br>
 | Model-Name           | epochs | Clean acc. | $\ell_{\infty}$ acc.|  Location (Link) |
 | :---                 | :------: | :------:   |:------: | :------:    |   
