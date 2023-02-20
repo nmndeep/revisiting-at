@@ -9,8 +9,8 @@ Requirements (specific versions tested on): </br>
 The bash script in `run_train.sh` trains the model `model.arch`. For clean training: `adv.attack None` and for adversarial training set `adv.attack apgd`.</br>
 For the standard setting as in paper (full augmentations) set `data.augmentations 1`, `model.model_ema 1` and `training.label_smoothing 1`.</br>
 To train models with Convolution-Stem (CvSt) set `model.not_original 1`. </br>
-The code does standard APGD adversarial trainining. The file `utils_architecture.py` has model definitions for the new `CvSt` models.
+The code does standard APGD adversarial trainining. </br>The file `utils_architecture.py` has model definitions for the new `CvSt` models.
 
 #### Evaluating a model
-The file `runner_aa_eval` runs `AutoAttack`(AA). Passing `fullaa 1` runs complete AA whereas `fullaa 0` runs the first two attacks in AA.
+The file `runner_aa_eval` runs `AutoAttack`(AA). Passing `fullaa 1` runs complete AA whereas `fullaa 0` runs the first two attacks in AA.</br>
 The best checkpoints for the models in the paper will be added soon
