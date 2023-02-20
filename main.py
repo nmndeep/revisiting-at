@@ -163,7 +163,7 @@ Section('dist', 'distributed training options').params(
 Section('adv', 'adversarial training options').params(
     attack=Param(str, 'if None standard training', default='none'),
     norm=Param(str, '', default='Linf'),
-    eps=Param(float, '', default=2.),
+    eps=Param(float, '', default=4./255),
     n_iter=Param(int, '', default=2),
     verbose=Param(int, '', default=0),
     noise_level=Param(float, '', default=1.),
