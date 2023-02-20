@@ -1,5 +1,5 @@
 # revisiting-at
-Code for training and evaluating models robust to $\ell_p$-norm adversaries for ImageNet, and finetuning to other datasets
+Code for training and evaluating models robust to $\ell_p$-norm adversaries for ImageNet, and finetuning to other datasets.
 
 ## Code
 Requirements (specific versions tested on): </br>
