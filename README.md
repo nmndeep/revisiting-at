@@ -1,5 +1,10 @@
-# revisiting-at
-Code for training and evaluating models robust to $\ell_p$-norm adversaries for ImageNet, and finetuning to other datasets.
+# Revisiting Adversarial Training for ImageNet: Architectures, Training and Generalization across Threat Models
+
+## Abstract
+While adversarial training has been extensively studied for ResNet architectures and low resolution datasets like CIFAR, much less is known for ImageNet. Given the recent debate about whether transformers are more robust than convnets, we revisit adversarial training on ImageNet comparing ViTs and ConvNeXts. Extensive experiments show that minor changes in architecture, most notably replacing PatchStem with ConvStem, and training scheme have a significant impact on the achieved robustness. These changes not only increase robustness in the seen $\ell_\infty$-threat model, but even more so improve generalization to unseen $\ell_1/\ell_2$-robustness.
+
+![readme_teaser](readme_teaser.png)
+
 
 ## Code
 Requirements (specific versions tested on): </br>
