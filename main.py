@@ -96,10 +96,10 @@ class LabelSmoothingCrossEntropy(nn.Module):
 Section('model', 'model details').params(
     arch=Param(str, default='effnet_b0'),
     pretrained=Param(int, 'is pretrained? (1/0)', default=1),
-    ckpt_path=Param(str, 'path to resume model', default='/scratch/nsingh/ImageNet_Arch/model_2023-01-15 21:30:40_convnext_base_upd_0_not_orig_1_pre_0_aug_1_adv_250at_allaug_from_cleanpretrained_N_1.5N_2N/weights_ema_150.pt'),
+    ckpt_path=Param(str, 'path to resume model', default=''),
     add_normalization=Param(int, '0 if no normalization, 1 otherwise', default=1),
     not_original=Param(int, 'change effnets? to patch-version', default=0),
-    updated=Param(int, 'Make conviso Big?', default=0),
+    updated=Param(int, 'Make conviso Big? Not in use', default=0),
     model_ema=Param(float, 'Use EMA?', default=0)
 )
 
@@ -111,8 +111,8 @@ Section('resolution', 'resolution scheduling').params(
 )
 
 Section('data', 'data related stuff').params(
-    train_dataset=Param(str, '.dat file to use for training', required=True),
-    val_dataset=Param(str, '.dat file to use for validation', required=True),
+    train_dataset=Param(str, 'file to use for training', required=True),
+    val_dataset=Param(str, 'file to use for validation', required=True),
     num_workers=Param(int, 'The number of workers', required=True),
     in_memory=Param(int, 'does the dataset fit in memory? (1/0)', required=True),
     seed=Param(int, 'seed for training loader', default=0),
@@ -128,7 +128,7 @@ Section('lr', 'lr scheduling').params(
 )
 
 Section('logging', 'how to log stuff').params(
-    folder=Param(str, 'log location', default="/mnt/SHARED/nsingh/ImageNet_Arch/full_Img/"),
+    folder=Param(str, 'log location', default=''),
     log_level=Param(int, '0 if only at end 1 otherwise', default=1),
     save_freq=Param(int, 'save models every nth epoch', default=2),
     addendum=Param(str, 'additional comments?', default=""),
@@ -378,21 +378,8 @@ class ImageNetTrainer:
             
             bn_params = [v for k, v in all_params if any([c in k for c in excluded_params])] #('bn' in k) #or k.endswith('.bias')
             bn_keys = [k for k, v in all_params if any([c in k for c in excluded_params])]
-            #print(', '.join(bn_keys))
-            #sys.exit()
             other_params = [v for k, v in all_params if not any([c in k for c in excluded_params])]  #not ('bn' in k) #or k.endswith('.bias')
-        # se_only = True
-        # elif se_only:
-            # other_params = []
-            # l = 0
-            # for name, param in self.model.named_parameters():
-            #     # print(name)
-            #     if "se_module" not in name:
-            #         # other_params.append(param)
-            #         param.requires_grad = False
-            #         l+=1
-            # print(l)
-            # exit()
+
         else:
             print('automatically exclude bn and bias from weight decay')
             bn_params = []
@@ -444,154 +431,67 @@ class ImageNetTrainer:
                             distributed, label_smoothing, in_memory, seed, augmentations, precision,
                             use_channel_last, world_size):
         torch.manual_seed(seed)
-        if False:
-            this_device = f'cuda:{self.gpu}'
-            print(this_device)
-            # train_path = Path(train_dataset)
-            data_paths = ['/scratch/fcroce42/ffcv_imagenet_data/train_400_0.50_90.ffcv',
-                '/scratch/nsingh/datasets/ffcv_imagenet_data/train_400_0.50_90.ffcv', '/scratch_local/datasets/ffcv_imagenet_data/train_400_0.50_90.ffcv']
-            for data_path in data_paths:
-                if os.path.exists(data_path):
-                    train_path = Path(data_path)
-                    break
-            print(train_path)
-            assert train_path.is_file()
-    
-            res = self.get_resolution(epoch=0)
-            prec = PREC_DICT[precision]
-            self.decoder = RandomResizedCropRGBImageDecoder((res, res))
-            if use_channel_last:
-                image_pipeline: List[Operation] = [
-                    self.decoder,
-                    RandomHorizontalFlip(),
-                    #Convert(np.float16),
-                    ToTensor(),
-                    #lambda x: x.contiguous(),
-                    ToDevice(ch.device(this_device), non_blocking=True),
-                    ToTorchImage(channels_last=True),
-                    NormalizeImage(NONORM_MEAN, NONORM_STD, #IMAGENET_MEAN, IMAGENET_STD,
-                        prec, #np.float16
-                        )
-                ]
-            else:
-                image_pipeline: List[Operation] = [
-                    self.decoder,
-                    RandomHorizontalFlip(),
-                    #Convert(np.float16),
-                    ToTensor(),
-                    #lambda x: x.contiguous(),
-                    ToDevice(ch.device(this_device), non_blocking=True),
-                    ToTorchImage(channels_last=False),
-                    #NormalizeImage(NONORM_MEAN, NONORM_STD, #IMAGENET_MEAN, IMAGENET_STD,
-                    #    prec, #np.float16
-                    #    )
-                    Convert(ch.cuda.HalfTensor), #float16
-                    torchvision.transforms.Normalize([0., 0., 0.], [255., 255., 255.]),
-                ]
-    
-            label_pipeline: List[Operation] = [
-                IntDecoder(),
-                ToTensor(),
-                Squeeze(),
-                ToDevice(ch.device(this_device), non_blocking=True)
-            ]
-    
-            order = OrderOption.RANDOM if distributed else OrderOption.QUASI_RANDOM
-            loader = Loader(train_dataset,
-                            batch_size=batch_size,
-                            num_workers=num_workers,
-                            order=order,
-                            os_cache=in_memory,
-                            drop_last=True,
-                            pipelines={
-                                'image': image_pipeline,
-                                'label': label_pipeline
-                            },
-                            distributed=distributed,
-                            seed=seed)
-                            
+        
+
+        if augmentations:
+            args = parserr.Arguments_augment()
+
         else:
-            
-            if augmentations:
-                args = parserr.Arguments_augment()
+            args = parserr.Arguments_No_augment()
 
-            else:
-                args = parserr.Arguments_No_augment()
+        dataset_train, args.nb_classes = build_dataset(is_train=True, args=args)
+        if False:
+            args.dist_eval = False
+            dataset_val = None
+        else:
+            dataset_val, _ = build_dataset(is_train=False, args=args)
 
-            dataset_train, args.nb_classes = build_dataset(is_train=True, args=args)
-            if False:
-                args.dist_eval = False
-                dataset_val = None
-            else:
-                dataset_val, _ = build_dataset(is_train=False, args=args)
+        num_tasks = world_size
+        global_rank = self.gpu #utils.get_rank()
 
-            num_tasks = world_size
-            global_rank = self.gpu #utils.get_rank()
+        sampler_train = torch.utils.data.DistributedSampler(
+            dataset_train, num_replicas=num_tasks, rank=global_rank, shuffle=True, seed=seed,
+        )
+        print("Sampler_train = %s" % str(sampler_train))
+        if args.dist_eval:
+            if len(dataset_val) % num_tasks != 0:
+                print('Warning: Enabling distributed evaluation with an eval dataset not divisible by process number. '
+                        'This will slightly alter validation results as extra duplicate entries are added to achieve '
+                        'equal num of samples per-process.')
+            sampler_val = torch.utils.data.DistributedSampler(
+                dataset_val, num_replicas=num_tasks, rank=global_rank, shuffle=False)
+        else:
+            sampler_val = torch.utils.data.SequentialSampler(dataset_val)
 
-            sampler_train = torch.utils.data.DistributedSampler(
-                dataset_train, num_replicas=num_tasks, rank=global_rank, shuffle=True, seed=seed,
-            )
-            print("Sampler_train = %s" % str(sampler_train))
-            if args.dist_eval:
-                if len(dataset_val) % num_tasks != 0:
-                    print('Warning: Enabling distributed evaluation with an eval dataset not divisible by process number. '
-                            'This will slightly alter validation results as extra duplicate entries are added to achieve '
-                            'equal num of samples per-process.')
-                sampler_val = torch.utils.data.DistributedSampler(
-                    dataset_val, num_replicas=num_tasks, rank=global_rank, shuffle=False)
-            else:
-                sampler_val = torch.utils.data.SequentialSampler(dataset_val)
-
-            data_loader_train = torch.utils.data.DataLoader(
-                dataset_train, sampler=sampler_train,
-                batch_size=batch_size,
+        data_loader_train = torch.utils.data.DataLoader(
+            dataset_train, sampler=sampler_train,
+            batch_size=batch_size,
+            num_workers=num_workers,
+            pin_memory=True,
+            drop_last=True,
+        )
+        if dataset_val is not None:
+            data_loader_val = torch.utils.data.DataLoader(
+                dataset_val, sampler=sampler_val,
+                batch_size=int(1.5 * batch_size),
                 num_workers=num_workers,
                 pin_memory=True,
-                drop_last=True,
+                drop_last=False
             )
-            if dataset_val is not None:
-                data_loader_val = torch.utils.data.DataLoader(
-                    dataset_val, sampler=sampler_val,
-                    batch_size=int(1.5 * batch_size),
-                    num_workers=num_workers,
-                    pin_memory=True,
-                    drop_last=False
-                )
-            else:
-                data_loader_val = None
+        else:
+            data_loader_val = None
 
-            mixup_fn = None
-            mixup_active = (args.mixup > 0 or args.cutmix > 0. or args.cutmix_minmax is not None) and augmentations
-            if mixup_active:
-                print("Mixup is activated!")
-                print(f"Using label smoothing:{label_smoothing}")
-                mixup_fn = Mixup(
-                    mixup_alpha=args.mixup, cutmix_alpha=args.cutmix, cutmix_minmax=args.cutmix_minmax,
-                    prob=args.mixup_prob, switch_prob=args.mixup_switch_prob, mode=args.mixup_mode,
-                    label_smoothing=label_smoothing, num_classes=args.nb_classes)
+        mixup_fn = None
+        mixup_active = (args.mixup > 0 or args.cutmix > 0. or args.cutmix_minmax is not None) and augmentations
+        if mixup_active:
+            print("Mixup is activated!")
+            print(f"Using label smoothing:{label_smoothing}")
+            mixup_fn = Mixup(
+                mixup_alpha=args.mixup, cutmix_alpha=args.cutmix, cutmix_minmax=args.cutmix_minmax,
+                prob=args.mixup_prob, switch_prob=args.mixup_switch_prob, mode=args.mixup_mode,
+                label_smoothing=label_smoothing, num_classes=args.nb_classes)
 
-            # assert not distributed
-            # self.decoder = None #RandomResizedCropRGBImageDecoder((res, res))
-            
-            # from robustness.datasets import DATASETS
-            # from robustness.tools import helpers
-            # data_paths = ['/home/scratch/datasets/imagenet',
-            #     '/scratch_local/datasets/ImageNet2012',
-            #     '/mnt/qb/datasets/ImageNet2012',
-            #     '/scratch/datasets/imagenet/']
-            # for data_path in data_paths:
-            #     if os.path.exists(data_path):
-            #         break
-            # print(f'found dataset at {data_path}')
-            # dataset = DATASETS['imagenet'](data_path) #'/home/scratch/datasets/imagenet'
-            
-            
-            # train_loader, val_loader = dataset.make_loaders(num_workers,
-            #                 batch_size, data_aug=True)
-        
-            # loader = helpers.DataPrefetcher(train_loader)
-            # #val_loader = helpers.DataPrefetcher(val_loader)
-                
+               
             
 
         return data_loader_train, data_loader_val, mixup_fn
@@ -608,8 +508,7 @@ class ImageNetTrainer:
                           ):
         this_device = f'cuda:{self.gpu}'
         # val_path = Path(val_dataset)
-        data_paths = ['/scratch/fcroce42/ffcv_imagenet_data/val_400_0.50_90.ffcv',
-                '/scratch/nsingh/datasets/ffcv_imagenet_data/val_400_0.50_90.ffcv', '/scratch_local/datasets/ffcv_imagenet_data/train_400_0.50_90.ffcv']
+        data_paths = ['']
         for data_path in data_paths:
                 if os.path.exists(data_path):
                     val_path = Path(data_path)
@@ -778,43 +677,10 @@ class ImageNetTrainer:
             model = model.to(memory_format=ch.channels_last)
         else:
             print('not using channel last memory format')
-        # for name, child in model.named_children():
-        #     for namm, pamm in child.named_parameters():
-        #         if 'se_' in namm:
-        #             print(namm + ' is unfrozen')
-        #             pamm.requires_grad = True
-        #         else:
-        #             print(namm + ' is frozen')
-        #             pamm.requires_grad = False
-        # exit()
-        # check where's the best point to add input normalization
-
-        # inpp = torch.rand(1, 3, 224, 224)
-        # flops = FlopCountAnalysis(model, inpp)
-        # val = flops.total()
-        # print(val)
-        # print(sizeof_fmt(int(val)))
-        # print(flop_count_table(flops, max_depth=2))
-
-     
-        if arch  != 'convnext_tiny_21k' and add_normalization:
+      
+        if add_normalization:
             print('add normalization layer')
             model = normalize_model(model, IMAGENET_MEAN, IMAGENET_STD)
-
-        # if arch == "convnext_tiny_21k" and bool(pretrained):
-        #     ckpt_path = '/scratch/nsingh/convnext_tiny_22k_1k_224.pth'
-        #     ckpt = ch.load(ckpt_path, map_location='cpu')['model']
-        #     ckpt = {k.replace('module.', ''): v for k, v in ckpt.items()}
-        #     ckpt = {k.replace('se_', 'se_module.'): v for k, v in ckpt.items()}
-            
-        #     try:
-        #         model.load_state_dict(ckpt)
-        #         print('standard loading')
-        #     except:
-        #         ckpt = {f'base_model.{k}': v for k, v in ckpt.items()}
-        #         model.load_state_dict(ckpt)
-        #         print('loaded from clean model')
-        #     model = normalize_model(model, IMAGENET_MEAN, IMAGENET_STD)
 
         if attack in ['apgd', 'fgsm']:
             print('using input perturbation layer')
@@ -851,11 +717,6 @@ class ImageNetTrainer:
                     ckpt = {f'base_model.{k}': v for k, v in ckpt.items()}
                     model.load_state_dict(ckpt)
                     print('loaded')
-        #model = model.to(memory_format=ch.channels_last)
-
-        # if arch  != 'convnext_tiny_21k' and add_normalization:
-        #     print('add normalization layer')
-        #     model = normalize_model(model, IMAGENET_MEAN, IMAGENET_STD)
         
         model = model.to(self.gpu)
         if bool(model_ema):
