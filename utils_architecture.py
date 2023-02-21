@@ -1,7 +1,6 @@
 '''All the models are defined here. 
-Mostly use timm but have some custom implementation: ConvStem (ConvBlock)
+Custom implementation: ConvStem (ConvBlock) with standard models built on timm.
 '''
-
 
 import torch
 import torch.nn as nn
@@ -237,99 +236,9 @@ def get_new_model(modelname, pretrained=True, not_original=False, updated=False)
         model = timm.models.resnet.resnet50(pretrained=pretrained,
             act_layer=timm_gelu)
 
-    elif modelname == 'resnet50_patch-stem': # resnets
-        model = timm.models.resnet.resnet50(pretrained=False, stem_type='patch')
-        
-    elif modelname == 'resnet50_patch-stem_gelu':
-        model = timm.models.resnet.resnet50(pretrained=False,
-            stem_type='patch', act_layer=timm_gelu)
-        
-    elif modelname == 'resnet50_stages-3393':
-        model = timm.models.resnet._create_resnet('resnet50',
-            block=timm.models.resnet.Bottleneck, layers=[3, 3, 9, 3])
-            
-    elif modelname == 'resnet50_dw':
-        model = timm.models.resnet.resnet50(pretrained=False, cardinality='dw',
-            channel_expansion=1.5, channel_expansion_stem=False)
-            
-    elif modelname == 'resnet50_dw_gelu':
-        model = timm.models.resnet.resnet50(pretrained=False, cardinality='dw',
-            channel_expansion=1.5, act_layer=timm_gelu)
-            
-    elif modelname == 'resnet50_dw_patch-stem':
-        model = timm.models.resnet.resnet50(pretrained=False, cardinality='dw',
-            channel_expansion=1.2, stem_type='patch',
-            channel_expansion_stem=False)
-
-    elif modelname == 'resnet50_dw_patch-stem_gelu':
-        model = timm.models.resnet.resnet50(pretrained=False, cardinality='dw',
-            channel_expansion=1.5, stem_type='patch', act_layer=timm_gelu,
-            channel_expansion_stem=False)
-
-    elif modelname == 'resnet50_dw_patch-stem_gelu-se':
-        model = timm.models.resnet.resnet50(pretrained=False, cardinality='dw',
-            base_width=int(1.5*64), stem_type='patch', act_layer=timm_gelu,
-            channel_expansion_stem=False, block_args=dict(attn_layer='se'))
-            
-            
-    elif modelname == 'resnet50_dw_patch-stem_gelu_stages-3393-se':
-        model = timm.models.resnet._create_resnet('resnet50',
-            block=timm.models.resnet.Bottleneck, cardinality='dw',
-            base_width=int(1.5*64), stem_type='patch', act_layer=timm_gelu,
-            layers=[3, 3, 9, 3], block_args=dict(attn_layer='se'))
-            
-    elif modelname == 'resnet50_dw_patch-stem_gelu_stages-3393_convnext-bn':
-        model = timm.models.resnet._create_resnet('resnet50',
-            block=timm.models.resnet.ConvNeXtBottleneck, cardinality='dw',
-            channel_expansion=1.5, stem_type='patch', act_layer=timm_gelu,
-            layers=[3, 3, 9, 3], type_bottleneck='inverted_dwup',
-            kernel_size=7)
-            
-    elif modelname == 'resnet50_dw_patch-stem_gelu_stages-3393_convnext-bn_fewer-act-norm':
-        model = timm.models.resnet._create_resnet('resnet50',
-            block=timm.models.resnet.ConvNeXtBottleneck, cardinality='dw',
-            channel_expansion=1.5, stem_type='patch', act_layer=timm_gelu,
-            layers=[3, 3, 9, 3], type_bottleneck='inverted_dwup',
-            kernel_size=7, fewer_act=True, fewer_norm=True)
-            
-    elif modelname == 'resnet50_dw_patch-stem_gelu_stages-3393_convnext-bn_fewer-act-norm_ln':
-        model = timm.models.resnet._create_resnet('resnet50',
-            block=timm.models.resnet.ConvNeXtBottleneck, cardinality='dw',
-            channel_expansion=1.5, stem_type='patch', act_layer=timm_gelu,
-            layers=[3, 3, 9, 3], type_bottleneck='inverted_dwup',
-            kernel_size=7, fewer_act=True, fewer_norm=True,
-            norm_layer=partial(timm.models.convnext.LayerNorm2d, eps=1e-6))
-            
-    elif modelname == 'resnet50_dw_patch-stem_gelu_stages-3393_convnext-bn_fewer-act-norm_ln_ds-sep':
-        model = timm.models.resnet._create_resnet('resnet50',
-            block=timm.models.resnet.ConvNeXtBottleneck, cardinality='dw',
-            channel_expansion=1.5, stem_type='patch', act_layer=timm_gelu,
-            layers=[3, 3, 9, 3], type_bottleneck='inverted_dwup',
-            kernel_size=7, fewer_act=True, fewer_norm=True,
-            norm_layer=partial(timm.models.convnext.LayerNorm2d, eps=1e-6),
-            downsample_first=True)
-            
-    elif modelname == 'resnet50_dw_patch-stem_gelu_stages-3393_convnext-bn_fewer-act-norm_ln_ds-sep_bias':
-        model = timm.models.resnet._create_resnet('resnet50',
-            block=timm.models.resnet.ConvNeXtBottleneck, cardinality='dw',
-            channel_expansion=1.5, stem_type='patch', act_layer=timm_gelu,
-            layers=[3, 3, 9, 3], type_bottleneck='inverted_dwup',
-            kernel_size=7, fewer_act=True, fewer_norm=True,
-            norm_layer=partial(timm.models.convnext.LayerNorm2d, eps=1e-6),
-            downsample_first=True, use_bias=True, convnext_init=True)
-
-
-    elif modelname == "xcit":
-        model = timm.models.xcit.xcit_small_12_p16_224(pretrained=pretrained)
-        if not_original:
-            model.patch_embed.proj = ConvBlock(48, end_siz=8)
-
     elif modelname == 'convnext_iso':
-
-        if updated:
-            model = cnxt_iso.convnext_isotropic_small(pretrained=pretrained, dim=432, depth=18) #
-        else:
-            model = cnxt_iso.convnext_isotropic_small(pretrained=pretrained, dim=384, depth=18) #, se=False, se_ratio=1./16)
+        
+        model = cnxt_iso.convnext_isotropic_small(pretrained=pretrained, dim=384, depth=18)
         if not_original:
             setattr(model, 'stem', ConvBlock(48, end_siz=8, fin_dim=432 if updated else 384))
 
@@ -344,7 +253,6 @@ def get_new_model(modelname, pretrained=True, not_original=False, updated=False)
     elif modelname == "convnext_small":
         model_args = dict(depths=[3, 3, 27, 3], dims=[96, 192, 384, 768])
         model = timm.models.convnext.convnext_small(pretrained=pretrained)
-
         if not_original:
             ##   only for removing patch-stem 
             model.stem = ConvBlock1(48, end_siz=8)
@@ -364,17 +272,10 @@ def get_new_model(modelname, pretrained=True, not_original=False, updated=False)
         if not_original:
             model.stem = ConvBlock3(96)
 
-
-    elif modelname == "densnet201":
-        model = timm.models.densenet.densenet201(pretrained=pretrained)
-
-    elif modelname == "inception":
-        model = create_model('inception_v3', pretrained=pretrained)
-
     elif modelname == 'vit_s':
         model = create_model('vit_small_patch16_224', pretrained=pretrained)
         if not_original:
-            ##   only for removing patch-stem and possibly 1 transformer block
+            ##   only for removing patch-stem
             model.patch_embed.proj = ConvBlock(48, end_siz=8)
 
     elif modelname == 'deit_s':
@@ -386,14 +287,14 @@ def get_new_model(modelname, pretrained=True, not_original=False, updated=False)
         if not_original:
             model.patch_embed.proj = ConvBlock(48, end_siz=8)
 
-    elif modelname == 'deit_m':
+    elif modelname == 'vit_m':
 
         model = timm.models.deit.deit3_medium_patch16_224(pretrained=pretrained)
         if not_original:
             ##   only for removing patch-stem 
             model.patch_embed.proj = ConvBlock2(48)
 
-    elif modelname == 'deit_s_21k':
+    elif modelname == 'vit_s_21k':
         model = create_model('deit3_small_patch16_224_in21ft1k', pretrained=pretrained)
  
 
@@ -410,6 +311,14 @@ def get_new_model(modelname, pretrained=True, not_original=False, updated=False)
     elif modelname=="wrn_50_2":
         model = timm.models.resnet.wide_resnet50_2(pretrained=False)
 
+   elif modelname == "densnet201":
+        model = timm.models.densenet.densenet201(pretrained=pretrained)
+
+    elif modelname == "inception":
+        model = create_model('inception_v3', pretrained=pretrained)
+
+        
+        
     else:
         logger.error('Invalid model name, please use either cait, deit, swin, vit, effnet, or rn50')
         sys.exit(1)
