@@ -13,17 +13,17 @@ Requirements (specific versions tested on): </br>
 
 #### Training
 The bash script in `run_train.sh` trains the model `model.arch`. For clean training: `adv.attack None` and for adversarial training set `adv.attack apgd`.</br>
-For the standard setting as in paper (heavy augmentations) set `data.augmentations 1`, `model.model_ema 1` and `training.label_smoothing 1`.</br>
+For the standard setting as in the paper (heavy augmentations) set `data.augmentations 1`, `model.model_ema 1` and `training.label_smoothing 1`.</br>
 To train models with Convolution-Stem (CvSt) set `model.not_original 1`. </br>
-The code does standard APGD adversarial trainining. </br>The file `utils_architecture.py` has model definitions for the new `CvSt` models.
+The code does standard APGD adversarial training. </br>The file `utils_architecture.py` has model definitions for the new `CvSt` models, all models are built on top of timm imports.
 
 #### Evaluating a model
-The file `runner_aa_eval` runs `AutoAttack`(AA). Passing `fullaa 1` runs complete AA whereas `fullaa 0` runs the first two attacks in AA.</br>
+The file `runner_aa_eval` runs `AutoAttack`(AA). Passing `fullaa 1` runs complete AA whereas `fullaa 0` runs the first two attacks (APGD-CE and APGD-T) in AA.</br>
 
 
 #### Checkpoints - ImageNet $\ell_{\infty} = 4/255$ robust models.
 The link location includes weights for the clean model (the one used as initialization for Adversarial Training (AT)), the robust model, and the `full-AA` log for $\ell_{\infty}, \ell_2$ and $\ell_1$ attacks.</br>
-| Model-Name           | epochs | Clean acc. | $\ell_{\infty}$ acc.|  Checkpoint (Link) |
+| Model-Name           | epochs | Clean acc. | AA - $\ell_{\infty}$ acc.|  Checkpoint (Link) |
 | :---                 | :------: | :------:   |:------: | :------:    |   
 | ConvNext-iso-CvSt    | 300 | 70.2  | 45.9 |   [Link](https://nc.mlcloud.uni-tuebingen.de/index.php/s/HpNbkLTNTBiaeo8)|
 | ViT-S-CvSt           | 300 | 72.5  | 48.1 |   [Link](https://nc.mlcloud.uni-tuebingen.de/index.php/s/agtDw3D7QXbDCmw)|
