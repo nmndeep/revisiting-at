@@ -8,7 +8,7 @@ While adversarial training has been extensively studied for ResNet architectures
 
 ## Code
 Requirements (specific versions tested on): </br>
-`fastargs-1.2.0` `autoattack-0.1` `pytorch-1.13.1` `torchvision-0.14.1` `robustbench-1.1` `timm-0.8.0.dev0`
+`fastargs-1.2.0` `autoattack-0.1` `pytorch-1.13.1` `torchvision-0.14.1` `robustbench-1.1` `timm-0.8.0.dev0`, `GPUtil`
 
 #### Training
 The bash script in `run_train.sh` trains the model `model.arch`. For clean training: `adv.attack None` and for adversarial training set `adv.attack apgd`.</br>
@@ -21,7 +21,7 @@ The file `runner_aa_eval` runs `AutoAttack`(AA). Passing `fullaa 1` runs complet
 
 
 #### Checkpoints - ImageNet $\ell_{\infty} = 4/255$ robust models.
-The link location includes the clean model (the one used as init for AT), the robust model, and the `full-AA` log for $\ell_{\infty}, \ell_2$ and $\ell_1$ attacks.</br>
+The link location includes weights for the clean model (the one used as initialization for Adversarial Training (AT)), the robust model, and the `full-AA` log for $\ell_{\infty}, \ell_2$ and $\ell_1$ attacks.</br>
 | Model-Name           | epochs | Clean acc. | $\ell_{\infty}$ acc.|  Checkpoint (Link) |
 | :---                 | :------: | :------:   |:------: | :------:    |   
 | ConvNext-iso-CvSt    | 300 | 70.2  | 45.9 |   [Link](https://nc.mlcloud.uni-tuebingen.de/index.php/s/HpNbkLTNTBiaeo8)|
