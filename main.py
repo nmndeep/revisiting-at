@@ -349,7 +349,6 @@ class ImageNetTrainer:
     @param('model.arch')
     def create_optimizer(self, momentum, optimizer, weight_decay,
                          label_smoothing, arch):
-        #assert optimizer == 'sgd'
 
         # Only do weight decay on non-batchnorm parameters
         if 'convnext' in arch or 'resnet' in arch:
@@ -482,9 +481,6 @@ class ImageNetTrainer:
                 prob=args.mixup_prob, switch_prob=args.mixup_switch_prob, mode=args.mixup_mode,
                 label_smoothing=label_smoothing, num_classes=args.nb_classes)
 
-               
-            
-
         return data_loader_train, data_loader_val, mixup_fn
 
     @param('data.val_dataset')
@@ -539,7 +535,6 @@ class ImageNetTrainer:
                 sys.exit()
             
             if attack == 'none':
-                ##### save every 10 epochs if 
                 save_freq = 1
             
             self.eval_and_log({'epoch': epoch})
@@ -690,8 +685,6 @@ class ImageNetTrainer:
         ns = []
         best_test_rob = 0.
 
-        # print(flops.by_operator())
-        # with ch.no_grad():
         with autocast(enabled=True):
             for idx, (images, target) in enumerate(tqdm(self.val_loader)):
                 # if show_once:
