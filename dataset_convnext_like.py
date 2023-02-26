@@ -81,13 +81,6 @@ def build_transform(is_train, args):
             )
         
         return transform
-        # if not resize_im:
-        # trans.append(transforms.Resize(args.input_size, interpolation=transforms.InterpolationMode.BICUBIC))
-        # trans.append(transforms.RandomCrop(args.input_size, padding=4))
-        # trans.append(transforms.RandomHorizontalFlip())
-        # trans.append(transforms.ColorJitter())
-        # trans.append(transforms.ToTensor())
-        # return transforms.Compose(trans)
 
     t = []
     if resize_im:
