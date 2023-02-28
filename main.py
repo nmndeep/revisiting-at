@@ -752,13 +752,6 @@ class ImageNetTrainer:
             for param_group in self.optimizer.param_groups:
                 param_group['lr'] = lrs[ix]
                 
-            '''print(images.device)
-            images = images.reshape(images.shape) # make contiguous (and more)
-            if False:
-                ch.save(images, './train_imgs_cm.pth')
-                sys.exit()
-            target = target.reshape(target.shape)
-            print(images.device)'''
 
             self.optimizer.zero_grad(set_to_none=True)
             with autocast(enabled=True):
@@ -793,7 +786,6 @@ class ImageNetTrainer:
 
                 msg = ', '.join(f'{n}={v}' for n, v in zip(names, values))
                 iterator.set_description(msg)
-            ### Logging end
 
             
         if perturb:
@@ -842,7 +834,6 @@ class ImageNetTrainer:
                 self.val_meters['loss'](loss_val)
                 if idx >= 50:
                     break
-        #print(f'clean accuracy={acc / 50000:.2%}')
         stats = {k: m.compute().item() for k, m in self.val_meters.items()}
 
         if stats['top_1'] > self.best_rob_acc:
