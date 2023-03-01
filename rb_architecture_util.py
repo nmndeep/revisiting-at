@@ -12,8 +12,7 @@ import torch.nn as nn
 import timm
 from functools import partial
 from timm.models import create_model
-from timm.models.convnext import _create_convnext as CNXT
-from timm.models.efficientnet_builder import resolve_bn_args
+# from timm.models.convnext import _create_convnext as CNXT
 import torch.nn.functional as F
 from functools import partial
 import math
