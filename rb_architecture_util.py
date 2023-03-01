@@ -245,14 +245,7 @@ def get_new_model(modelname, pretrained=False, not_original=True):
             ##   only for removing patch-stem 
             model.stem = ConvBlock3(64)
 
-
-    elif modelname == "densnet201":
-        model = timm.models.densenet.densenet201(pretrained=pretrained)
-
-    elif modelname == "inception":
-        model = create_model('inception_v3', pretrained=pretrained)
-
-    elif modelname == 'deit_s':
+    elif modelname == 'vit_s':
         from timm.models.deit import _create_deit
         model_kwargs = dict(
             patch_size=16, embed_dim=384, depth=12, num_heads=6, no_embed_class=False,
@@ -263,7 +256,7 @@ def get_new_model(modelname, pretrained=False, not_original=True):
             
         model = normalize_model(model)
         
-    elif modelname == 'deit_m':
+    elif modelname == 'vit_m':
 
         model = timm.models.deit.deit3_medium_patch16_224(pretrained=pretrained)
         if not_original:
