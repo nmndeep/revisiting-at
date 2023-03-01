@@ -12,13 +12,10 @@ import torch.nn as nn
 import timm
 from functools import partial
 from timm.models import create_model
-from models import convnext_iso as cnxt_iso
 from timm.models.convnext import _create_convnext as CNXT
-# from models import EfficientNet 
 from timm.models.efficientnet_builder import resolve_bn_args
 import torch.nn.functional as F
 from functools import partial
-# from models import convnext
 import math
 from timm.models.vision_transformer import VisionTransformer
 
@@ -88,9 +85,9 @@ class LayerNorm(nn.Module):
             return x
 
 
-
-
 class ImageNormalizer(nn.Module):
+    '''ADD normalization as a first layer in the models, as AA uses un-normalized inputs.'''
+    
     def __init__(self, persistent: bool = True) -> None:
         super(ImageNormalizer, self).__init__()
 
@@ -224,15 +221,10 @@ class IdentityLayer(nn.Module):
         return inputs
 
 
-def get_new_model(modelname, pretrained=True, not_original=False):
+def get_new_model(modelname, pretrained=False, not_original=True):
 
 
-    if modelname == 'convnext_iso':
-        model = cnxt_iso.convnext_isotropic_small(pretrained=pretrained, dim=384, depth=18) #, se=False, se_ratio=1./16)
-        if not_original:
-            setattr(model, 'stem', ConvBlock(48, end_siz=8, fin_dim=432 if updated else 384))
-
-    elif modelname == 'convnext_tiny':
+    if modelname == 'convnext_tiny':
         model = timm.models.convnext.convnext_tiny(pretrained=pretrained)
         if not_original:
             model.stem = ConvBlock1(48, end_siz=8)
@@ -261,14 +253,16 @@ def get_new_model(modelname, pretrained=True, not_original=False):
         model = create_model('inception_v3', pretrained=pretrained)
 
     elif modelname == 'deit_s':
-        from timm.models.deit import deit3_small_patch16_224, _create_deit
+        from timm.models.deit import _create_deit
         model_kwargs = dict(
             patch_size=16, embed_dim=384, depth=12, num_heads=6, no_embed_class=False,
             init_values=None)
         model = create_model('deit_small_patch16_224', pretrained=pretrained)
         if not_original:
             model.patch_embed.proj = ConvBlock(48, end_siz=8)
-
+            
+        model = normalize_model(model)
+        
     elif modelname == 'deit_m':
 
         model = timm.models.deit.deit3_medium_patch16_224(pretrained=pretrained)
@@ -278,7 +272,7 @@ def get_new_model(modelname, pretrained=True, not_original=False):
 
 
     elif modelname == 'vit_b':
-        model = timm.models.vision_transformer.vit_base_patch16_224(pretrained=pretrained) # used for 21k pretrained on 206
+        model = timm.models.vision_transformer.vit_base_patch16_224(pretrained=pretrained)
 
         if not_original:
             model.patch_embed.proj = ConvBlock(48, end_siz=16, fin_dim=None)
