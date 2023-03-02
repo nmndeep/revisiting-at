@@ -13,7 +13,7 @@ python3 main.py --data.num_workers=12 --data.in_memory=1 \
         --logging.folder=path-to-logging-folder --logging.log_level 2 \
     --adv.attack apgd --adv.n_iter 2 --adv.norm Linf --training.distributed 1 --training.batch_size 80 --validation.batch_size 16 --lr.lr 1e-3 --logging.save_freq 2  \
     --resolution.min_res 224 --resolution.max_res 224 --data.seed 0 --data.augmentations 1 --model.add_normalization 0\
-    --model.updated 0 --model.not_original 1 --model.model_ema 1 --lr.lr_peak_epoch 20\
+     --model.not_original 1 --model.model_ema 1 --lr.lr_peak_epoch 20\
     --training.label_smoothing 0.1 --logging.addendum='additional_text_appended_to_save_folder_name'\
     --dist.world_size '# of GPUS' --training.distributed 1 --model.pretrained 0\
     --model.arch convnext_base --training.epochs 300 \
