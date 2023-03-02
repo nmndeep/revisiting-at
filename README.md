@@ -12,9 +12,9 @@ Requirements (specific versions tested on): </br>
 `fastargs-1.2.0` `autoattack-0.1` `pytorch-1.13.1` `torchvision-0.14.1` `robustbench-1.1` `timm-0.8.0.dev0`, `GPUtil`
 
 #### Training
-The bash script in `run_train.sh` trains the model `model.arch`. For clean training: `adv.attack None` and for adversarial training set `adv.attack apgd`.</br>
+The bash script in `run_train.sh` trains the model `model.arch`. For clean training: `adv.attack none` and for adversarial training set `adv.attack apgd`.</br>
 For the standard setting as in the paper (heavy augmentations) set `data.augmentations 1`, `model.model_ema 1` and `training.label_smoothing 1`.</br>
-To train models with Convolution-Stem (CvSt) set `model.not_original 1`. </br>
+To train models with Convolution-Stem (CvSt) set `model.not_original 1`. `model.updated` is a redundant parameter for now.</br>
 The code does standard APGD adversarial training. </br>The file `utils_architecture.py` has model definitions for the new `CvSt` models, all models are built on top of timm imports.
 
 #### Evaluating a model
