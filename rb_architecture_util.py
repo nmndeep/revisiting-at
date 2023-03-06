@@ -10,13 +10,9 @@ from torch import Tensor
 import torch.nn as nn
 
 import timm
-from functools import partial
 from timm.models import create_model
-# from timm.models.convnext import _create_convnext as CNXT
 import torch.nn.functional as F
-from functools import partial
 import math
-from timm.models.vision_transformer import VisionTransformer
 
 IMAGENET_MEAN = [c * 1. for c in (0.485, 0.456, 0.406)]
 IMAGENET_STD = [c * 1. for c in (0.229, 0.224, 0.225)] 
