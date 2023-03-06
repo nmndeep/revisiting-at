@@ -221,7 +221,7 @@ class IdentityLayer(nn.Module):
 
 
 def get_new_model(modelname, pretrained=False, not_original=True):
-
+    ### All the submitted models are with CvSt, so lee[ not_original=True always
 
     if modelname == 'convnext_tiny':
         model = timm.models.convnext.convnext_tiny(pretrained=pretrained)
