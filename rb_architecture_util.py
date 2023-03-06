@@ -143,33 +143,6 @@ class ConvBlock(nn.Module):
         # out = self.bn(out)
         return out
 
-class ConvBlock2(nn.Module):
-    """Used only for det-medium"""
-    expansion = 1
-    def __init__(self, siz=48, end_siz=8, fin_dim=384):
-        super(ConvBlock2, self).__init__()
-        self.planes = siz
-        fin_dim = self.planes*end_siz if fin_dim != 432 else 432
-        # self.bn = nn.BatchNorm2d(planes) if self.normaliz == "bn" else nn.GroupNorm(num_groups=1, num_channels=planes)
-        self.stem = nn.Sequential(nn.Conv2d(3, self.planes, kernel_size=3, stride=2, padding=1),
-                                  LayerNorm(self.planes, data_format="channels_first"),
-                                  nn.GELU(),
-                                  nn.Conv2d(self.planes, self.planes*2, kernel_size=3, stride=2, padding=1),
-                                  LayerNorm(self.planes*2, data_format="channels_first"),
-                                  nn.GELU(),
-                                  nn.Conv2d(self.planes*2, self.planes*4, kernel_size=3, stride=2, padding=1),
-                                  LayerNorm(self.planes*4, data_format="channels_first"),
-                                  nn.GELU(),
-                                  nn.Conv2d(self.planes*4, self.planes*8, kernel_size=3, stride=2, padding=1),
-                                  LayerNorm(self.planes*8, data_format="channels_first"),
-                                  nn.GELU(),
-                                  nn.Conv2d(self.planes*8, 512, kernel_size=1, stride=1, padding=0)
-                        )
-    def forward(self, x):
-        out = self.stem(x)
-        # out = self.bn(out)
-        return out
-
 
 class ConvBlock3(nn.Module):
     # expansion = 1
@@ -221,53 +194,28 @@ class IdentityLayer(nn.Module):
 
 
 def get_new_model(modelname, pretrained=False, not_original=True):
-    ### All the submitted models are with CvSt, so lee[ not_original=True always
 
-    if modelname == 'convnext_tiny':
+    if modelname == 'convnext_t_cvst':
         model = timm.models.convnext.convnext_tiny(pretrained=pretrained)
-        if not_original:
-            model.stem = ConvBlock1(48, end_siz=8)
+        model.stem = ConvBlock1(48, end_siz=8)
 
-    elif modelname == "convnext_small":
-        model_args = dict(depths=[3, 3, 27, 3], dims=[96, 192, 384, 768])
+    elif modelname == "convnext_s_cvst":
         model = timm.models.convnext.convnext_small(pretrained=pretrained)
+        model.stem = ConvBlock1(48, end_siz=8)
 
-        if not_original:
-            ##   only for removing patch-stem 
-            model.stem = ConvBlock1(48, end_siz=8)
-
-    elif modelname == "convnext_base":
+    elif modelname == "convnext_b_cvst":
         model_args = dict(depths=[3, 3, 27, 3], dims=[128, 256, 512, 1024])
-        # model = timm.models.create_model('convnext_base', pretrained=pretrained, pretrained_cfg='convnext_base.fb_in1k')
         model = timm.models.convnext._create_convnext('convnext_base.fb_in1k', pretrained=pretrained, **model_args)
-        if not_original:
-            ##   only for removing patch-stem 
-            model.stem = ConvBlock3(64)
+        model.stem = ConvBlock3(64)
 
-    elif modelname == 'vit_s':
-        from timm.models.deit import _create_deit
-        model_kwargs = dict(
-            patch_size=16, embed_dim=384, depth=12, num_heads=6, no_embed_class=False,
-            init_values=None)
+    elif modelname == 'vit_s_cvst':
         model = create_model('deit_small_patch16_224', pretrained=pretrained)
-        if not_original:
-            model.patch_embed.proj = ConvBlock(48, end_siz=8)
-            
+        model.patch_embed.proj = ConvBlock(48, end_siz=8)
         model = normalize_model(model)
         
-    elif modelname == 'vit_m':
-
-        model = timm.models.deit.deit3_medium_patch16_224(pretrained=pretrained)
-        if not_original:
-            ##   only for removing patch-stem 
-            model.patch_embed.proj = ConvBlock2(48)
-
-
-    elif modelname == 'vit_b':
+    elif modelname == 'vit_b_cvst':
         model = timm.models.vision_transformer.vit_base_patch16_224(pretrained=pretrained)
-
-        if not_original:
-            model.patch_embed.proj = ConvBlock(48, end_siz=16, fin_dim=None)
+        model.patch_embed.proj = ConvBlock(48, end_siz=16, fin_dim=None)
 
    else:
         logger.error('Invalid model name, please use either cait, deit, swin, vit, effnet, or rn50')
