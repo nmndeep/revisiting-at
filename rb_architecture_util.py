@@ -102,12 +102,6 @@ class ImageNormalizer(nn.Module):
 def timm_gelu(inplace):
     return nn.GELU()
 
-def convert_relu_to_gelu(model):
-    for child_name, child in model.named_children():
-        if isinstance(child, nn.ReLU):
-            setattr(model, child_name, nn.GELU())
-        else:
-            convert_relu_to_gelu(child)
 
 def normalize_model(model: nn.Module) -> nn.Module:
     layers = OrderedDict([
