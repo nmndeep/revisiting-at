@@ -18,40 +18,6 @@ IMAGENET_MEAN = [c * 1. for c in (0.485, 0.456, 0.406)]
 IMAGENET_STD = [c * 1. for c in (0.229, 0.224, 0.225)] 
 
 
-def interpolate_pos_encoding(
-    pos_embed: Tensor,
-    new_img_size: int,
-    old_img_size: int = 224,
-    patch_size: int = 16) -> Tensor:
-    """Interpolates the positional encoding of ViTs for new image resolution
-    (adapted from https://github.com/facebookresearch/dino/blob/main/vision_transformer.py#L174).
-    It currently handles only square images.
-    """
-    N = pos_embed.shape[1] - 1
-    npatch = (new_img_size // patch_size) ** 2
-    w, h = new_img_size, new_img_size
-    if npatch == N and w == h:
-        print(f'Positional encoding not changed.')
-        return pos_embed
-    print(f'Interpolating positional encoding from {N} to {npatch} patches (size={patch_size}).')
-    class_pos_embed = pos_embed[:, 0]
-    patch_pos_embed = pos_embed[:, 1:]
-    dim = pos_embed.shape[-1]
-    w0 = w // patch_size
-    h0 = h // patch_size
-    # we add a small number to avoid floating point error in the interpolation
-    # see discussion at https://github.com/facebookresearch/dino/issues/8
-    w0, h0 = w0 + 0.1, h0 + 0.1
-    patch_pos_embed = nn.functional.interpolate(
-        patch_pos_embed.reshape(1, int(math.sqrt(N)), int(math.sqrt(N)), dim).permute(0, 3, 1, 2),
-        scale_factor=(w0 / math.sqrt(N), h0 / math.sqrt(N)),
-        mode='bicubic',
-    )
-    assert int(w0) == patch_pos_embed.shape[-2] and int(h0) == patch_pos_embed.shape[-1]
-    patch_pos_embed = patch_pos_embed.permute(0, 2, 3, 1).view(1, -1, dim)
-    return torch.cat((class_pos_embed.unsqueeze(0), patch_pos_embed), dim=1)
-
-
 
 class LayerNorm(nn.Module):
     r""" LayerNorm that supports two data formats: channels_last (default) or channels_first. 
