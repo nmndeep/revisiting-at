@@ -173,7 +173,7 @@ def get_new_model(modelname, pretrained=False, not_original=True):
         model = timm.models.vision_transformer.vit_base_patch16_224(pretrained=pretrained)
         model.patch_embed.proj = ConvBlock(48, end_siz=16, fin_dim=None)
 
-   else:
+    else:
         logger.error('Invalid model name, please use either cait, deit, swin, vit, effnet, or rn50')
         sys.exit(1)
 
