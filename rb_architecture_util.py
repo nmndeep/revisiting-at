@@ -61,10 +61,6 @@ class ImageNormalizer(nn.Module):
         return (input - self.mean) / self.std
         
 
-def timm_gelu(inplace):
-    return nn.GELU()
-
-
 def normalize_model(model: nn.Module) -> nn.Module:
     layers = OrderedDict([
         ('normalize', ImageNormalizer()),
