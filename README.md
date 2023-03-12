@@ -33,5 +33,6 @@ The link location includes weights for the clean model (the one used as initiali
 | ConvNext-S-CvSt      | 50 | 74.4  | 52.4 |   [Link](https://nc.mlcloud.uni-tuebingen.de/index.php/s/m3bAwNg4CJY4jrp)|
 | ViT-B-CvSt           | 250 | 76.3  | 54.7 |   [Link](https://nc.mlcloud.uni-tuebingen.de/index.php/s/SbN5AJAicdZJXyr)|
 | ConvNext-B-CvSt      | 250 | 75.9  | 56.1 |   [Link](https://nc.mlcloud.uni-tuebingen.de/index.php/s/RQBEXagC7R7XweX)|
+| ConvNext-L-CvSt      | 100 | 77.0  | 57.7 |   [Link](https://nc.mlcloud.uni-tuebingen.de/index.php/s/LeYdmW9DMAr8zws)|
 
 ###### Checkpoints for ImageNet models finetuned to be robust at $\ell_{\infty} = 8/255$ can be found here: [Link](https://nc.mlcloud.uni-tuebingen.de/index.php/s/FiTToeo4RKY896P)
