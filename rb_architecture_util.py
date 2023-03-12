@@ -159,7 +159,11 @@ def get_new_model(modelname, pretrained=False, not_original=True):
         model_args = dict(depths=[3, 3, 27, 3], dims=[128, 256, 512, 1024])
         model = timm.models.convnext._create_convnext('convnext_base.fb_in1k', pretrained=pretrained, **model_args)
         model.stem = ConvBlock3(64)
-
+        
+    elif modelname == "convnext_l_cvst":
+        model = timm.models.convnext_large(pretrained=pretrained)
+        model.stem = ConvBlock3(96)
+        
     elif modelname == 'vit_s_cvst':
         model = create_model('deit_small_patch16_224', pretrained=pretrained)
         model.patch_embed.proj = ConvBlock(48, end_siz=8)
