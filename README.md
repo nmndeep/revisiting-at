@@ -24,7 +24,7 @@ The file `runner_aa_eval` runs `AutoAttack`(AA). Passing `fullaa 1` runs complet
 
 #### Checkpoints - ImageNet $\ell_{\infty} = 4/255$ robust models.
 The link location includes weights for the clean model (the one used as initialization for Adversarial Training (AT)), the robust model, and the `full-AA` log for $\ell_{\infty}, \ell_2$ and $\ell_1$ attacks. </br>
-Note: the higher resolution numbers use the same checkpoint as for the standard resolution of 224 - only evlautaion is done at the higher resolution mentioned.</br>
+Note: the higher resolution numbers use the same checkpoint as for the standard resolution of 224 - only evaluation is done at the higher resolution mentioned.</br>
 | Model-Name           | epochs | res. | Clean acc. | AA - $\ell_{\infty}$ acc.|  Checkpoint (Link) |
 | :---                 | :------: | :------: | :------:   |:------: | :------:    |   
 | ConvNext-iso-CvSt    | 300 | 224 | 70.2  | 45.9 |   [Link](https://nc.mlcloud.uni-tuebingen.de/index.php/s/HpNbkLTNTBiaeo8)|
@@ -34,7 +34,9 @@ Note: the higher resolution numbers use the same checkpoint as for the standard 
 | ConvNext-S-CvSt      | 50 | 224 | 74.4   | 52.4 |   [Link](https://nc.mlcloud.uni-tuebingen.de/index.php/s/m3bAwNg4CJY4jrp)|
 | ViT-B-CvSt           | 250 | 224 | 76.3  | 54.7 |   [Link](https://nc.mlcloud.uni-tuebingen.de/index.php/s/SbN5AJAicdZJXyr)|
 | ConvNext-B-CvSt      | 250 | 224 | 75.9  | 56.1 |   [Link](https://nc.mlcloud.uni-tuebingen.de/index.php/s/RQBEXagC7R7XweX)|
-| ConvNext-B-CvSt      | --- | 256 | 76.9  | 57.3 |   [Link](https://nc.mlcloud.uni-tuebingen.de/index.php/s/RQBEXagC7R7XweX)|
+| ConvNext-B-CvSt*     | --- | 256 | 76.9  | 57.3 |   [Link](https://nc.mlcloud.uni-tuebingen.de/index.php/s/RQBEXagC7R7XweX)|
 | ConvNext-L-CvSt      | 100 | 224 | 77.0  | 57.7 |   [Link](https://nc.mlcloud.uni-tuebingen.de/index.php/s/LeYdmW9DMAr8zws)|
-
-###### Checkpoints for ImageNet models finetuned to be robust at $\ell_{\infty} = 8/255$ can be found here: [Link](https://nc.mlcloud.uni-tuebingen.de/index.php/s/FiTToeo4RKY896P)
+| ConvNext-L-CvSt*     | --- | 320 | 78.3  | 59.4 |   [Link](https://nc.mlcloud.uni-tuebingen.de/index.php/s/LeYdmW9DMAr8zws)|
+###### *: increased resolution (only for evaluation) also leads to increased FLOPs.
+-------------------
+##### Checkpoints for ImageNet models finetuned to be robust at $\ell_{\infty} = 8/255$ can be found here: [Link](https://nc.mlcloud.uni-tuebingen.de/index.php/s/FiTToeo4RKY896P)
