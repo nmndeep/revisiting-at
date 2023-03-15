@@ -18,7 +18,6 @@ IMAGENET_MEAN = [c * 1. for c in (0.485, 0.456, 0.406)]
 IMAGENET_STD = [c * 1. for c in (0.229, 0.224, 0.225)] 
 
 
-
 class LayerNorm(nn.Module):
     r""" LayerNorm that supports two data formats: channels_last (default) or channels_first. 
     The ordering of the dimensions in the inputs. channels_last corresponds to inputs with 
@@ -44,8 +43,8 @@ class LayerNorm(nn.Module):
             x = (x - u) / torch.sqrt(s + self.eps)
             x = self.weight[:, None, None] * x + self.bias[:, None, None]
             return x
-
-
+        
+        
 class ImageNormalizer(nn.Module):
     '''ADD normalization as a first layer in the models, as AA uses un-normalized inputs.'''
     
@@ -67,6 +66,22 @@ def normalize_model(model: nn.Module) -> nn.Module:
         ('model', model)
     ])
     return nn.Sequential(layers)
+
+
+    
+def get_transforms(img_size=224):
+    '''returns torch-transform as a callable for RobustBench. Used when testing for increased resolution models.'''
+    crop_pct = 0.875
+    scale_size = int(math.floor(img_size / crop_pct))
+    trans = transforms.Compose([
+        transforms.Resize(
+            scale_size,
+            interpolation=transforms.InterpolationMode("bicubic")),
+        transforms.CenterCrop(img_size),
+        transforms.ToTensor()
+    ])
+
+    return trans
 
 
 class ConvBlock(nn.Module):
@@ -112,7 +127,6 @@ class ConvBlock3(nn.Module):
                                   LayerNorm(self.planes*2, data_format="channels_first"),
                                   nn.GELU()
                                     )
-          
 
     def forward(self, x):
         out = self.stem(x)
@@ -176,5 +190,22 @@ def get_new_model(modelname, pretrained=False, not_original=True):
     else:
         logger.error('Invalid model name, please use either cait, deit, swin, vit, effnet, or rn50')
         sys.exit(1)
+    return model
 
+def load_model(arch, not_original, chkpt_path):
+        ''''
+        Load the model with definition from the checkpoint
+        arch: architecture name
+        not_original: If True -> CvSt
+        chkpt_path: location of checkpoint
+        '''
+        model = get_new_model(arch, pretrained=False, not_original=not_original)
+        ckpt = torch.load(chkpt_path, map_location='cpu')
+        ckpt = {k.replace('module.', ''): v for k, v in ckpt.items()}
+        ckpt = {k.replace('base_model.', ''): v for k, v in ckpt.items()}
+        ckpt = {k.replace('se_', 'se_module.'): v for k, v in ckpt.items()}
+
+        model.load_state_dict(ckpt)
+        model = model.to(device)
+        model.eval()
     return model
