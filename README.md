@@ -35,8 +35,8 @@ Note: the higher resolution numbers use the same checkpoint as for the standard 
 | ViT-B-CvSt           | 250 | 224 | 76.3  | 54.7 |   [Link](https://nc.mlcloud.uni-tuebingen.de/index.php/s/SbN5AJAicdZJXyr)|
 | ConvNext-B-CvSt      | 250 | 224 | 75.9  | 56.1 |   [Link](https://nc.mlcloud.uni-tuebingen.de/index.php/s/RQBEXagC7R7XweX)|
 | ConvNext-B-CvSt*     | --- | 256 | 76.9  | 57.3 |   [Link](https://nc.mlcloud.uni-tuebingen.de/index.php/s/RQBEXagC7R7XweX)|
-| ConvNext-L-CvSt      | 100 | 224 | 77.0  | 57.7 |   [Link](https://nc.mlcloud.uni-tuebingen.de/index.php/s/LeYdmW9DMAr8zws)|
-| ConvNext-L-CvSt*     | --- | 320 | 78.2  | 59.4 |   [Link](https://nc.mlcloud.uni-tuebingen.de/index.php/s/LeYdmW9DMAr8zws)|
+| ConvNext-L-CvSt      | 100 | 224 | 77.0  | 57.7 |   [Link](https://nc.mlcloud.uni-tuebingen.de/index.php/s/YzBpeHRrRQzHBDz)|
+| ConvNext-L-CvSt*     | --- | 320 | 78.2  | 59.4 |   [Link](https://nc.mlcloud.uni-tuebingen.de/index.php/s/YzBpeHRrRQzHBDz)|
 ###### *: increased resolution (only for evaluation) also leads to increased FLOPs.
 -------------------
 ##### Checkpoints for ImageNet models finetuned to be robust at $\ell_{\infty} = 8/255$ can be found here: [Link](https://nc.mlcloud.uni-tuebingen.de/index.php/s/FiTToeo4RKY896P)
