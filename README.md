@@ -31,7 +31,7 @@ Note: the higher resolution numbers use the same checkpoint as for the standard 
 | ViT-S-CvSt           | 300 | 224 | 72.5  | 48.1 |   [Link](https://nc.mlcloud.uni-tuebingen.de/index.php/s/agtDw3D7QXbDCmw)|
 | ConvNext-T-CvSt      | 300 | 224 | 72.7  | 49.5 |   [Link](https://nc.mlcloud.uni-tuebingen.de/index.php/s/BFLoMrMdn8iBk7Y)|
 | ViT-M-CvSt           | 50 | 224 | 72.4   | 48.8 |   [Link](https://nc.mlcloud.uni-tuebingen.de/index.php/s/q2mkEYtq5Zjpa4e)|
-| ConvNext-S-CvSt      | 50 | 224 | 74.4   | 52.4 |   [Link](https://nc.mlcloud.uni-tuebingen.de/index.php/s/m3bAwNg4CJY4jrp)|
+| ConvNext-S-CvSt      | 50 | 224 | 74.1   | 52.4 |   [Link](https://nc.mlcloud.uni-tuebingen.de/index.php/s/m3bAwNg4CJY4jrp)|
 | ViT-B-CvSt           | 250 | 224 | 76.3  | 54.7 |   [Link](https://nc.mlcloud.uni-tuebingen.de/index.php/s/SbN5AJAicdZJXyr)|
 | ConvNext-B-CvSt      | 250 | 224 | 75.9  | 56.1 |   [Link](https://nc.mlcloud.uni-tuebingen.de/index.php/s/RQBEXagC7R7XweX)|
 | ConvNext-B-CvSt*     | --- | 256 | 76.9  | 57.3 |   [Link](https://nc.mlcloud.uni-tuebingen.de/index.php/s/RQBEXagC7R7XweX)|
