@@ -12,13 +12,9 @@ import torch.nn as nn
 import timm
 from functools import partial
 from timm.models import create_model
-from models import convnext_iso as cnxt_iso
 from timm.models.convnext import _create_convnext as CNXT
-# from models import EfficientNet 
-from timm.models.efficientnet_builder import resolve_bn_args
 import torch.nn.functional as F
 from functools import partial
-# from models import convnext
 import math
 from timm.models.vision_transformer import VisionTransformer
 
@@ -236,11 +232,11 @@ def get_new_model(modelname, pretrained=True, not_original=False, updated=False)
         model = timm.models.resnet.resnet50(pretrained=pretrained,
             act_layer=timm_gelu)
 
-    elif modelname == 'convnext_iso':
+#     elif modelname == 'convnext_iso':
         
-        model = cnxt_iso.convnext_isotropic_small(pretrained=pretrained, dim=384, depth=18)
-        if not_original:
-            setattr(model, 'stem', ConvBlock(48, end_siz=8, fin_dim=432 if updated else 384))
+#         model = cnxt_iso.convnext_isotropic_small(pretrained=pretrained, dim=384, depth=18)
+#         if not_original:
+#             setattr(model, 'stem', ConvBlock(48, end_siz=8, fin_dim=432 if updated else 384))
 
     elif modelname == 'convnext_tiny':
         model = timm.models.convnext.convnext_tiny(pretrained=pretrained)
