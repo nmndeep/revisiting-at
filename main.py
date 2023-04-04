@@ -74,7 +74,7 @@ class LabelSmoothingCrossEntropy(nn.Module):
         self.smoothing = smoothing
         self.confidence = 1. - smoothing
 
-    def forward(self, x: torch.Tensor, target: torch.Tensor) -> torch.Tensor:
+    def forward(self, x: ch.Tensor, target: ch.Tensor) -> ch.Tensor:
         logprobs = F.log_softmax(x, dim=-1)
         target = target.type(ch.int64)
         nll_loss = -logprobs.gather(dim=-1, index=target)
@@ -420,7 +420,7 @@ class ImageNetTrainer:
     def create_train_loader(self, train_dataset, num_workers, batch_size,
                             distributed, label_smoothing, in_memory, seed, augmentations, precision,
                             use_channel_last, world_size):
-        torch.manual_seed(seed)
+        ch.manual_seed(seed)
         
 
         if augmentations:
@@ -439,7 +439,7 @@ class ImageNetTrainer:
         num_tasks = world_size
         global_rank = self.gpu #utils.get_rank()
 
-        sampler_train = torch.utils.data.DistributedSampler(
+        sampler_train = ch.utils.data.DistributedSampler(
             dataset_train, num_replicas=num_tasks, rank=global_rank, shuffle=True, seed=seed,
         )
         print("Sampler_train = %s" % str(sampler_train))
@@ -448,12 +448,12 @@ class ImageNetTrainer:
                 print('Warning: Enabling distributed evaluation with an eval dataset not divisible by process number. '
                         'This will slightly alter validation results as extra duplicate entries are added to achieve '
                         'equal num of samples per-process.')
-            sampler_val = torch.utils.data.DistributedSampler(
+            sampler_val = ch.utils.data.DistributedSampler(
                 dataset_val, num_replicas=num_tasks, rank=global_rank, shuffle=False)
         else:
-            sampler_val = torch.utils.data.SequentialSampler(dataset_val)
+            sampler_val = ch.utils.data.SequentialSampler(dataset_val)
 
-        data_loader_train = torch.utils.data.DataLoader(
+        data_loader_train = ch.utils.data.DataLoader(
             dataset_train, sampler=sampler_train,
             batch_size=batch_size,
             num_workers=num_workers,
@@ -461,7 +461,7 @@ class ImageNetTrainer:
             drop_last=True,
         )
         if dataset_val is not None:
-            data_loader_val = torch.utils.data.DataLoader(
+            data_loader_val = ch.utils.data.DataLoader(
                 dataset_val, sampler=sampler_val,
                 batch_size=int(1.5 * batch_size),
                 num_workers=num_workers,
