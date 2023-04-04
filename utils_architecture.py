@@ -307,7 +307,7 @@ def get_new_model(modelname, pretrained=True, not_original=False, updated=False)
     elif modelname=="wrn_50_2":
         model = timm.models.resnet.wide_resnet50_2(pretrained=False)
 
-   elif modelname == "densnet201":
+    elif modelname == "densnet201":
         model = timm.models.densenet.densenet201(pretrained=pretrained)
 
     elif modelname == "inception":
