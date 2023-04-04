@@ -216,7 +216,7 @@ def get_cosine_lr(epoch, lr, epochs, lr_peak_epoch):
         ys = [1e-4 * lr, lr]
         return np.interp([epoch], xs, ys)[0]
     else:
-        lr_min = 5e-6
+        lr_min = 1e-10
         lr_t = lr_min + .5 * (lr - lr_min) * (1 + math.cos(math.pi * (
             epoch - lr_peak_epoch) / (epochs - lr_peak_epoch)))
         return lr_t
