@@ -1,4 +1,4 @@
-'''Main runnable file for imagenet experiments - tested for multi-gpu training
+'''Main runnable file for imagenet experiments
 '''
 
 import sys
@@ -6,10 +6,12 @@ sys.path.insert(0,'..')
 from math import ceil
 import math
 import numpy as np
-import os
+import os, sys
 from os import get_terminal_size
+from timm.loss.cross_entropy import SoftTargetCrossEntropy
+from timm.models import create_model
 from datetime import datetime
-import argparse
+import argparse, sys, torch
 import torch.nn as nn
 import torch.optim as optim
 from torchinfo import summary
@@ -27,6 +29,7 @@ ch.autograd.profiler.profile(False)
 import argparse
 import parserr
 from dataset_convnext_like import build_dataset
+from timm.loss import JsdCrossEntropy, SoftTargetCrossEntropy, BinaryCrossEntropy
 import torchvision
 from torchvision import models
 import torchmetrics
@@ -45,17 +48,32 @@ from fastargs.decorators import param
 from fastargs import Param, Section
 from fastargs.validation import And, OneOf
 
-
+from ffcv.pipeline.operation import Operation
+from ffcv.loader import Loader, OrderOption
+from ffcv.transforms import ToTensor, ToDevice, Squeeze, NormalizeImage, \
+    RandomHorizontalFlip, ToTorchImage, Convert
+from ffcv.fields.rgb_image import CenterCropRGBImageDecoder, \
+    RandomResizedCropRGBImageDecoder
+from ffcv.fields.basics import IntDecoder
 import timm
-from timm.loss import JsdCrossEntropy, SoftTargetCrossEntropy, BinaryCrossEntropy
+from timm.loss import SoftTargetCrossEntropy
 from timm.data.mixup import Mixup
-from timm.models import create_model
+from torch_intermediate_layer_getter import IntermediateLayerGetter as MidGetter
 
 from autopgd_train_clean import apgd_train
 from fgsm_train import fgsm_train, fgsm_attack
 from utils_architecture import normalize_model, get_new_model
 from ptflops import get_model_complexity_info
 from fvcore.nn import FlopCountAnalysis, flop_count_table, flop_count_str
+
+def sizeof_fmt(num, suffix="Flops"):
+    for unit in ["", "Ki", "Mi", "G", "T"]:
+        if abs(num) < 1000.0:
+            return f"{num:3.3f}{unit}{suffix}"
+        num /= 1000.0
+    return f"{num:.1f}Yi{suffix}"
+
+
 
 import warnings
 warnings.filterwarnings("ignore", category=DeprecationWarning) 
@@ -64,6 +82,7 @@ warnings.filterwarnings("ignore", category=FutureWarning)
 # warnings.filterwarnings("ignore", category=UserWarning)
 os.environ['KMP_WARNINGS'] = 'off'
 os.environ["CUDA_DEVICE_ORDER"]="PCI_BUS_ID"
+# os.environ["PL_TORCH_DISTRIBUTED_BACKEND"] = "gloo"
 
 class LabelSmoothingCrossEntropy(nn.Module):
     """ NLL loss with label smoothing.
@@ -74,7 +93,7 @@ class LabelSmoothingCrossEntropy(nn.Module):
         self.smoothing = smoothing
         self.confidence = 1. - smoothing
 
-    def forward(self, x: ch.Tensor, target: ch.Tensor) -> ch.Tensor:
+    def forward(self, x: torch.Tensor, target: torch.Tensor) -> torch.Tensor:
         logprobs = F.log_softmax(x, dim=-1)
         target = target.type(ch.int64)
         nll_loss = -logprobs.gather(dim=-1, index=target)
@@ -90,8 +109,10 @@ Section('model', 'model details').params(
     ckpt_path=Param(str, 'path to resume model', default=''),
     add_normalization=Param(int, '0 if no normalization, 1 otherwise', default=1),
     not_original=Param(int, 'change effnets? to patch-version', default=0),
-    updated=Param(int, 'Make conviso Big? Not in use', default=0),
-    model_ema=Param(float, 'Use EMA?', default=0)
+    updated=Param(int, 'Make conviso Big?', default=0),
+    model_ema=Param(float, 'Use EMA?', default=0),
+    freeze_some=Param(int, 'freeze some layers', default=0),
+    early=Param(int, 'freeze early layers?', default=1),
 )
 
 Section('resolution', 'resolution scheduling').params(
@@ -102,8 +123,8 @@ Section('resolution', 'resolution scheduling').params(
 )
 
 Section('data', 'data related stuff').params(
-    train_dataset=Param(str, 'file to use for training', required=True),
-    val_dataset=Param(str, 'file to use for validation', required=True),
+    train_dataset=Param(str, '.dat file to use for training', required=True),
+    val_dataset=Param(str, '.dat file to use for validation', required=True),
     num_workers=Param(int, 'The number of workers', required=True),
     in_memory=Param(int, 'does the dataset fit in memory? (1/0)', required=True),
     seed=Param(int, 'seed for training loader', default=0),
@@ -119,7 +140,7 @@ Section('lr', 'lr scheduling').params(
 )
 
 Section('logging', 'how to log stuff').params(
-    folder=Param(str, 'log location', default=''),
+    folder=Param(str, 'log location', default="/mnt/SHARED/nsingh/ImageNet_Arch/full_Img/"),
     log_level=Param(int, '0 if only at end 1 otherwise', default=1),
     save_freq=Param(int, 'save models every nth epoch', default=2),
     addendum=Param(str, 'additional comments?', default=""),
@@ -148,13 +169,13 @@ Section('training', 'training hyper param stuff').params(
 Section('dist', 'distributed training options').params(
     world_size=Param(int, 'number gpus', default=1),
     address=Param(str, 'address', default='localhost'),
-    port=Param(str, 'port', default='12357')
+    port=Param(str, 'port', default='12355')
 )
 
 Section('adv', 'adversarial training options').params(
     attack=Param(str, 'if None standard training', default='none'),
     norm=Param(str, '', default='Linf'),
-    eps=Param(float, '', default=4./255),
+    eps=Param(float, '', default=4./255.),
     n_iter=Param(int, '', default=2),
     verbose=Param(int, '', default=0),
     noise_level=Param(float, '', default=1.),
@@ -207,16 +228,16 @@ def get_cyclic_lr(epoch, lr, epochs, lr_peak_epoch):
 @param('training.epochs')
 @param('lr.lr_peak_epoch')
 def get_cosine_lr(epoch, lr, epochs, lr_peak_epoch):
-    if epochs > 100:
-        lr_peak_epoch = 20
-    else:
-        lr_peak_epoch = 10
+    # if epochs > 100:
+    #     lr_peak_epoch = 20
+    # else:
+    #     lr_peak_epoch = 10
     if epoch <= lr_peak_epoch:
         xs = [0, lr_peak_epoch]
         ys = [1e-4 * lr, lr]
         return np.interp([epoch], xs, ys)[0]
     else:
-        lr_min = 1e-10
+        lr_min = 5e-6
         lr_t = lr_min + .5 * (lr - lr_min) * (1 + math.cos(math.pi * (
             epoch - lr_peak_epoch) / (epochs - lr_peak_epoch)))
         return lr_t
@@ -278,6 +299,30 @@ class WrappedModel(nn.Module):
             
     def set_perturb(self, mode):
         self.perturb_input = mode
+
+
+
+def freeze_some_layers(model, early):
+
+    if bool(early):
+        for name, child in model.named_children():
+            for namm, pamm in child.named_parameters():
+                if 'stem' in namm:
+                    print(namm + ' is unfrozen')
+                    pamm.requires_grad = True
+                else:
+                    print(namm + ' is frozen')
+                    pamm.requires_grad = False
+    else:
+        for name, child in model.named_children():
+            for namm, pamm in child.named_parameters():
+                if 'stem' in namm:
+                    print(namm + ' is unfrozen')
+                    pamm.requires_grad = False
+                else:
+                    print(namm + ' is frozen')
+                    pamm.requires_grad = True
+
 
 
 class ImageNetTrainer:
@@ -349,6 +394,7 @@ class ImageNetTrainer:
     @param('model.arch')
     def create_optimizer(self, momentum, optimizer, weight_decay,
                          label_smoothing, arch):
+        #assert optimizer == 'sgd'
 
         # Only do weight decay on non-batchnorm parameters
         if 'convnext' in arch or 'resnet' in arch:
@@ -368,8 +414,21 @@ class ImageNetTrainer:
             
             bn_params = [v for k, v in all_params if any([c in k for c in excluded_params])] #('bn' in k) #or k.endswith('.bias')
             bn_keys = [k for k, v in all_params if any([c in k for c in excluded_params])]
+            #print(', '.join(bn_keys))
+            #sys.exit()
             other_params = [v for k, v in all_params if not any([c in k for c in excluded_params])]  #not ('bn' in k) #or k.endswith('.bias')
-
+        # se_only = True
+        # elif se_only:
+            # other_params = []
+            # l = 0
+            # for name, param in self.model.named_parameters():
+            #     # print(name)
+            #     if "se_module" not in name:
+            #         # other_params.append(param)
+            #         param.requires_grad = False
+            #         l+=1
+            # print(l)
+            # exit()
         else:
             print('automatically exclude bn and bias from weight decay')
             bn_params = []
@@ -420,66 +479,156 @@ class ImageNetTrainer:
     def create_train_loader(self, train_dataset, num_workers, batch_size,
                             distributed, label_smoothing, in_memory, seed, augmentations, precision,
                             use_channel_last, world_size):
-        ch.manual_seed(seed)
-        
-
-        if augmentations:
-            args = parserr.Arguments_augment()
-
-        else:
-            args = parserr.Arguments_No_augment()
-
-        dataset_train, args.nb_classes = build_dataset(is_train=True, args=args)
+        torch.manual_seed(seed)
         if False:
-            args.dist_eval = False
-            dataset_val = None
+            this_device = f'cuda:{self.gpu}'
+            print(this_device)
+            # train_path = Path(train_dataset)
+            data_paths = ['/scratch/fcroce42/ffcv_imagenet_data/train_400_0.50_90.ffcv',
+                '/scratch/nsingh/datasets/ffcv_imagenet_data/train_400_0.50_90.ffcv', '/scratch_local/datasets/ffcv_imagenet_data/train_400_0.50_90.ffcv']
+            for data_path in data_paths:
+                if os.path.exists(data_path):
+                    train_path = Path(data_path)
+                    break
+            print(train_path)
+            assert train_path.is_file()
+    
+            res = self.get_resolution(epoch=0)
+            prec = PREC_DICT[precision]
+            self.decoder = RandomResizedCropRGBImageDecoder((res, res))
+            if use_channel_last:
+                image_pipeline: List[Operation] = [
+                    self.decoder,
+                    RandomHorizontalFlip(),
+                    #Convert(np.float16),
+                    ToTensor(),
+                    #lambda x: x.contiguous(),
+                    ToDevice(ch.device(this_device), non_blocking=True),
+                    ToTorchImage(channels_last=True),
+                    NormalizeImage(NONORM_MEAN, NONORM_STD, #IMAGENET_MEAN, IMAGENET_STD,
+                        prec, #np.float16
+                        )
+                ]
+            else:
+                image_pipeline: List[Operation] = [
+                    self.decoder,
+                    RandomHorizontalFlip(),
+                    #Convert(np.float16),
+                    ToTensor(),
+                    #lambda x: x.contiguous(),
+                    ToDevice(ch.device(this_device), non_blocking=True),
+                    ToTorchImage(channels_last=False),
+                    #NormalizeImage(NONORM_MEAN, NONORM_STD, #IMAGENET_MEAN, IMAGENET_STD,
+                    #    prec, #np.float16
+                    #    )
+                    Convert(ch.cuda.HalfTensor), #float16
+                    torchvision.transforms.Normalize([0., 0., 0.], [255., 255., 255.]),
+                ]
+    
+            label_pipeline: List[Operation] = [
+                IntDecoder(),
+                ToTensor(),
+                Squeeze(),
+                ToDevice(ch.device(this_device), non_blocking=True)
+            ]
+    
+            order = OrderOption.RANDOM if distributed else OrderOption.QUASI_RANDOM
+            loader = Loader(train_dataset,
+                            batch_size=batch_size,
+                            num_workers=num_workers,
+                            order=order,
+                            os_cache=in_memory,
+                            drop_last=True,
+                            pipelines={
+                                'image': image_pipeline,
+                                'label': label_pipeline
+                            },
+                            distributed=distributed,
+                            seed=seed)
+                            
         else:
-            dataset_val, _ = build_dataset(is_train=False, args=args)
+            
+            if augmentations:
+                args = parserr.Arguments_augment()
 
-        num_tasks = world_size
-        global_rank = self.gpu #utils.get_rank()
+            else:
+                args = parserr.Arguments_No_augment()
 
-        sampler_train = ch.utils.data.DistributedSampler(
-            dataset_train, num_replicas=num_tasks, rank=global_rank, shuffle=True, seed=seed,
-        )
-        print("Sampler_train = %s" % str(sampler_train))
-        if args.dist_eval:
-            if len(dataset_val) % num_tasks != 0:
-                print('Warning: Enabling distributed evaluation with an eval dataset not divisible by process number. '
-                        'This will slightly alter validation results as extra duplicate entries are added to achieve '
-                        'equal num of samples per-process.')
-            sampler_val = ch.utils.data.DistributedSampler(
-                dataset_val, num_replicas=num_tasks, rank=global_rank, shuffle=False)
-        else:
-            sampler_val = ch.utils.data.SequentialSampler(dataset_val)
+            dataset_train, args.nb_classes = build_dataset(is_train=True, args=args)
+            if False:
+                args.dist_eval = False
+                dataset_val = None
+            else:
+                dataset_val, _ = build_dataset(is_train=False, args=args)
 
-        data_loader_train = ch.utils.data.DataLoader(
-            dataset_train, sampler=sampler_train,
-            batch_size=batch_size,
-            num_workers=num_workers,
-            pin_memory=True,
-            drop_last=True,
-        )
-        if dataset_val is not None:
-            data_loader_val = ch.utils.data.DataLoader(
-                dataset_val, sampler=sampler_val,
-                batch_size=int(1.5 * batch_size),
+            num_tasks = world_size
+            global_rank = self.gpu #utils.get_rank()
+
+            sampler_train = torch.utils.data.DistributedSampler(
+                dataset_train, num_replicas=num_tasks, rank=global_rank, shuffle=True, seed=seed,
+            )
+            print("Sampler_train = %s" % str(sampler_train))
+            if args.dist_eval:
+                if len(dataset_val) % num_tasks != 0:
+                    print('Warning: Enabling distributed evaluation with an eval dataset not divisible by process number. '
+                            'This will slightly alter validation results as extra duplicate entries are added to achieve '
+                            'equal num of samples per-process.')
+                sampler_val = torch.utils.data.DistributedSampler(
+                    dataset_val, num_replicas=num_tasks, rank=global_rank, shuffle=False)
+            else:
+                sampler_val = torch.utils.data.SequentialSampler(dataset_val)
+
+            data_loader_train = torch.utils.data.DataLoader(
+                dataset_train, sampler=sampler_train,
+                batch_size=batch_size,
                 num_workers=num_workers,
                 pin_memory=True,
-                drop_last=False
+                drop_last=True,
             )
-        else:
-            data_loader_val = None
+            if dataset_val is not None:
+                data_loader_val = torch.utils.data.DataLoader(
+                    dataset_val, sampler=sampler_val,
+                    batch_size=int(1.5 * batch_size),
+                    num_workers=num_workers,
+                    pin_memory=True,
+                    drop_last=False
+                )
+            else:
+                data_loader_val = None
 
-        mixup_fn = None
-        mixup_active = (args.mixup > 0 or args.cutmix > 0. or args.cutmix_minmax is not None) and augmentations
-        if mixup_active:
-            print("Mixup is activated!")
-            print(f"Using label smoothing:{label_smoothing}")
-            mixup_fn = Mixup(
-                mixup_alpha=args.mixup, cutmix_alpha=args.cutmix, cutmix_minmax=args.cutmix_minmax,
-                prob=args.mixup_prob, switch_prob=args.mixup_switch_prob, mode=args.mixup_mode,
-                label_smoothing=label_smoothing, num_classes=args.nb_classes)
+            mixup_fn = None
+            mixup_active = (args.mixup > 0 or args.cutmix > 0. or args.cutmix_minmax is not None) and augmentations
+            if mixup_active:
+                print("Mixup is activated!")
+                print(f"Using label smoothing:{label_smoothing}")
+                mixup_fn = Mixup(
+                    mixup_alpha=args.mixup, cutmix_alpha=args.cutmix, cutmix_minmax=args.cutmix_minmax,
+                    prob=args.mixup_prob, switch_prob=args.mixup_switch_prob, mode=args.mixup_mode,
+                    label_smoothing=label_smoothing, num_classes=args.nb_classes)
+
+            # assert not distributed
+            # self.decoder = None #RandomResizedCropRGBImageDecoder((res, res))
+            
+            # from robustness.datasets import DATASETS
+            # from robustness.tools import helpers
+            # data_paths = ['/home/scratch/datasets/imagenet',
+            #     '/scratch_local/datasets/ImageNet2012',
+            #     '/mnt/qb/datasets/ImageNet2012',
+            #     '/scratch/datasets/imagenet/']
+            # for data_path in data_paths:
+            #     if os.path.exists(data_path):
+            #         break
+            # print(f'found dataset at {data_path}')
+            # dataset = DATASETS['imagenet'](data_path) #'/home/scratch/datasets/imagenet'
+            
+            
+            # train_loader, val_loader = dataset.make_loaders(num_workers,
+            #                 batch_size, data_aug=True)
+        
+            # loader = helpers.DataPrefetcher(train_loader)
+            # #val_loader = helpers.DataPrefetcher(val_loader)
+                
+            
 
         return data_loader_train, data_loader_val, mixup_fn
 
@@ -493,9 +642,55 @@ class ImageNetTrainer:
     def create_val_loader(self, val_dataset, num_workers, batch_size,
                           resolution, precision, distributed, use_channel_last
                           ):
-        '''Validations stats are not computed during training - to save time and compute'''
-       
-        loader = None
+        this_device = f'cuda:{self.gpu}'
+        # val_path = Path(val_dataset)
+        data_paths = ['/scratch/fcroce42/ffcv_imagenet_data/val_400_0.50_90.ffcv',
+                '/scratch/nsingh/datasets/ffcv_imagenet_data/val_400_0.50_90.ffcv', '/scratch_local/datasets/ffcv_imagenet_data/train_400_0.50_90.ffcv']
+        for data_path in data_paths:
+                if os.path.exists(data_path):
+                    val_path = Path(data_path)
+                    break
+        assert val_path.is_file()
+        res_tuple = (resolution, resolution)
+        prec = PREC_DICT[precision]
+        cropper = CenterCropRGBImageDecoder(res_tuple, ratio=DEFAULT_CROP_RATIO)
+        if use_channel_last:
+            image_pipeline = [
+                cropper,
+                ToTensor(),
+                ToDevice(ch.device(this_device), non_blocking=True),
+                ToTorchImage(),
+                NormalizeImage(NONORM_MEAN, NONORM_STD, #IMAGENET_MEAN, IMAGENET_STD
+                    prec)
+            ]
+        else:
+            image_pipeline = [
+                cropper,
+                ToTensor(),
+                ToDevice(ch.device(this_device), non_blocking=True),
+                ToTorchImage(channels_last=False),
+                Convert(ch.cuda.FloatTensor),
+                torchvision.transforms.Normalize([0., 0., 0.], [255., 255., 255.]),
+            ]
+
+        label_pipeline = [
+            IntDecoder(),
+            ToTensor(),
+            Squeeze(),
+            ToDevice(ch.device(this_device),
+            non_blocking=True)
+        ]
+
+        loader = Loader(val_dataset,
+                        batch_size=batch_size,
+                        num_workers=num_workers,
+                        order=OrderOption.SEQUENTIAL,
+                        drop_last=False,
+                        pipelines={
+                            'image': image_pipeline,
+                            'label': label_pipeline
+                        },
+                        distributed=distributed)
         return loader
 
     @param('training.epochs')
@@ -505,14 +700,14 @@ class ImageNetTrainer:
     @param('adv.attack')
 
     def train(self, epochs, log_level, save_freq, ckpt_path, attack):
-#         vall, nums = self.single_val()
-#         if log_level > 0:
-#             val_dict = {
-#                 'Validation acc': vall.item(),
-#                 'points': nums
-#             }
-#             if self.gpu == 0:
-#                 self.log(val_dict)
+        vall, nums = self.single_val()
+        if log_level > 0:
+            val_dict = {
+                'Validation acc': vall.item(),
+                'points': nums
+            }
+            if self.gpu == 0:
+                self.log(val_dict)
 
         for epoch in range(epochs):
             #print(f'epoch {epoch}')
@@ -534,8 +729,9 @@ class ImageNetTrainer:
             if train_loss.isnan():
                 sys.exit()
             
-            if attack == 'none':
-                save_freq = 1
+            # if attack == 'none':
+                ##### save every 10 epochs if 
+            save_freq = 1
             
             self.eval_and_log({'epoch': epoch})
             if (self.gpu == 0 and epoch % save_freq == 0) or (self.gpu == 0 and epoch == epochs - 1):
@@ -574,11 +770,14 @@ class ImageNetTrainer:
         return stats
 
 
+
     @param('model.arch')
     @param('model.pretrained')
     @param('model.not_original')
     @param('model.updated')
     @param('model.model_ema')
+    @param('model.freeze_some')
+    @param('model.early')
     @param('training.distributed')
     @param('training.use_blurpool')
     @param('model.ckpt_path')
@@ -592,7 +791,7 @@ class ImageNetTrainer:
     @param('adv.alpha')
     @param('adv.noise_level')
     @param('adv.skip_projection')
-    def create_model_and_scaler(self, arch, pretrained, not_original, updated, model_ema, distributed, use_blurpool,
+    def create_model_and_scaler(self, arch, pretrained, not_original, updated, model_ema, freeze_some, early, distributed, use_blurpool,
         ckpt_path, add_normalization, attack, norm, eps, n_iter, verbose,
         use_channel_last, alpha, noise_level, skip_projection):
         scaler = GradScaler()
@@ -618,10 +817,16 @@ class ImageNetTrainer:
             model = model.to(memory_format=ch.channels_last)
         else:
             print('not using channel last memory format')
-      
-        if add_normalization:
+
+        if bool(freeze_some):
+            print(f"Freezing early layers: {bool(early)}")
+            freeze_some_layers(model, early)
+        
+     
+        if arch  != 'convnext_tiny_21k' and add_normalization:
             print('add normalization layer')
             model = normalize_model(model, IMAGENET_MEAN, IMAGENET_STD)
+
 
         if attack in ['apgd', 'fgsm']:
             print('using input perturbation layer')
@@ -640,6 +845,13 @@ class ImageNetTrainer:
         
         if self.gpu == 0:
             print(model)
+            inpp = torch.rand(1, 3, 224, 224)
+            flops = FlopCountAnalysis(model, inpp)
+            val = flops.total()
+            print(val)
+            print(sizeof_fmt(int(val)))
+            print(flop_count_table(flops, max_depth=2))
+            print(flops.by_operator())
 
         if not ckpt_path == '':
             ckpt = ch.load(ckpt_path, map_location='cpu')
@@ -650,14 +862,21 @@ class ImageNetTrainer:
 
             except:
                 try:
-                    # ckpt = {f'base_model.{k}': v for k, v in ckpt.items()}
+                    ckpt = {f'base_model.{k}': v for k, v in ckpt.items()}
                     model.load_state_dict(ckpt)
                     print('loaded from clean model')
                 except:
-                    ckpt = {k.replace('base_module', ''): v for k, v in ckpt.items()}
-                    ckpt = {f'base_model.{k}': v for k, v in ckpt.items()}
+                    ckpt = {k.replace('base_model.', ''): v for k, v in ckpt.items()}
+                    # ckpt = {f'base_model.{k}': v for k, v in ckpt.items()}
                     model.load_state_dict(ckpt)
                     print('loaded')
+        #model = model.to(memory_format=ch.channels_last)
+
+        # print(model.patch_embed(torch.rand((50, 3, 224, 224))))
+        # exit()
+        # if arch  != 'convnext_tiny_21k' and add_normalization:
+        #     print('add normalization layer')
+        #     model = normalize_model(model, IMAGENET_MEAN, IMAGENET_STD)
         
         model = model.to(self.gpu)
         if bool(model_ema):
@@ -685,6 +904,8 @@ class ImageNetTrainer:
         ns = []
         best_test_rob = 0.
 
+
+        # with ch.no_grad():
         with autocast(enabled=True):
             for idx, (images, target) in enumerate(tqdm(self.val_loader)):
                 # if show_once:
@@ -752,6 +973,13 @@ class ImageNetTrainer:
             for param_group in self.optimizer.param_groups:
                 param_group['lr'] = lrs[ix]
                 
+            '''print(images.device)
+            images = images.reshape(images.shape) # make contiguous (and more)
+            if False:
+                ch.save(images, './train_imgs_cm.pth')
+                sys.exit()
+            target = target.reshape(target.shape)
+            print(images.device)'''
 
             self.optimizer.zero_grad(set_to_none=True)
             with autocast(enabled=True):
@@ -786,6 +1014,7 @@ class ImageNetTrainer:
 
                 msg = ', '.join(f'{n}={v}' for n, v in zip(names, values))
                 iterator.set_description(msg)
+            ### Logging end
 
             
         if perturb:
@@ -834,6 +1063,7 @@ class ImageNetTrainer:
                 self.val_meters['loss'](loss_val)
                 if idx >= 50:
                     break
+        #print(f'clean accuracy={acc / 50000:.2%}')
         stats = {k: m.compute().item() for k, m in self.val_meters.items()}
 
         if stats['top_1'] > self.best_rob_acc:
