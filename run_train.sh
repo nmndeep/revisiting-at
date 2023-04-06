@@ -1,6 +1,6 @@
 #!/bin/bash
 
-export CUDA_VISIBLE_DEVICES='DEVICE_IDS separated by comma'
+export CUDA_VISIBLE_DEVICES = DEVICE_IDS separated by comma
 
 sleep 2s
 
