@@ -19,7 +19,6 @@ from robustbench.utils import clean_accuracy
 
 from main import BlurPoolConv2d, PREC_DICT, IMAGENET_MEAN, \
     IMAGENET_STD
-from utils_data import get_loaders, early_stop
 from utils_architecture import normalize_model, get_new_model, interpolate_pos_encoding
 from ptflops import get_model_complexity_info
 from fvcore.nn import FlopCountAnalysis, flop_count_table, flop_count_str
