@@ -25,7 +25,7 @@ The file `runner_aa_eval` runs `AutoAttack`(AA). Passing `fullaa 1` runs complet
 #### Checkpoints - ImageNet $\ell_{\infty} = 4/255$ robust models.
 The link location includes weights for the clean model (the one used as initialization for Adversarial Training (AT)), the robust model, and the `full-AA` log for $\ell_{\infty}, \ell_2$ and $\ell_1$ attacks. </br>
 Note: the higher resolution numbers use the same checkpoint as for the standard resolution of 224 - only evaluation is done at the higher resolution mentioned.</br>
-| Model-Name           | epochs | res. | Clean acc. | AA - $\ell_{\infty}$ acc.|  Checkpoint (Clean-init and robust models) |
+| Model-Name           | epochs | res. | Clean acc. | AA - $\ell_{\infty}$ acc.|  Checkpoint (Clean-init </br> and robust models) |
 | :---                 | :------: | :------: | :------:   |:------: | :------:    |   
 | ConvNext-iso-CvSt    | 300 | 224 | 70.2  | 45.9 |   [Link](https://nc.mlcloud.uni-tuebingen.de/index.php/s/HpNbkLTNTBiaeo8)|
 | ViT-S-CvSt           | 300 | 224 | 72.5  | 48.1 |   [Link](https://nc.mlcloud.uni-tuebingen.de/index.php/s/agtDw3D7QXbDCmw)|
