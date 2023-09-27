@@ -1,6 +1,7 @@
-# Revisiting Adversarial Training for ImageNet: Architectures, Training and Generalization across Threat Models
-#### Naman D Singh, Francesco Croce, Matthias Hein 
-#### University of Tübingen
+## Revisiting Adversarial Training for ImageNet: Architectures, Training and Generalization across Threat Models
+#### Naman D Singh, Francesco Croce, Matthias Hein -- University of Tübingen
+#### NeurIPS 2023
+
 ### [Paper](https://arxiv.org/abs/2303.01870)
 ## Abstract
 While adversarial training has been extensively studied for ResNet architectures and low resolution datasets like CIFAR, much less is known for ImageNet. Given the recent debate about whether transformers are more robust than convnets, we revisit adversarial training on ImageNet comparing ViTs and ConvNeXts. Extensive experiments show that minor changes in architecture, most notably replacing PatchStem with ConvStem, and training scheme have a significant impact on the achieved robustness. These changes not only increase robustness in the seen $\ell_\infty$-threat model, but even more so improve generalization to unseen $\ell_1/\ell_2$-robustness.
@@ -43,7 +44,7 @@ Note: the higher resolution numbers use the same checkpoint as for the standard 
 | ConvNext-L-CvSt*     | --- | 320 | 78.2  | 59.4 |   [Link](https://nc.mlcloud.uni-tuebingen.de/index.php/s/YzBpeHRrRQzHBDz)|
 ###### *: increased resolution (only for evaluation) also leads to increased FLOPs.
 -------------------
-Checkpoints for ImageNet models finetuned to be robust at $\ell_\infty = 8/255$ can be found here: [Link](https://nc.mlcloud.uni-tuebingen.de/index.php/s/FiTToeo4RKY896P)
+Checkpoints for ImageNet models finetuned to be robust at $\ell_\infty = 8/255$ are available here: [Link](https://nc.mlcloud.uni-tuebingen.de/index.php/s/FiTToeo4RKY896P)
 ________________________________
 <h4>Required citation</h4>
 
