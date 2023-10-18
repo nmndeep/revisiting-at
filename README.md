@@ -31,7 +31,7 @@ Note: the higher resolution numbers use the same checkpoint as for the standard 
 | ConvNext-iso-CvSt    | 300 | 224 | 70.2  | 45.9 |   [Link](https://nc.mlcloud.uni-tuebingen.de/index.php/s/HpNbkLTNTBiaeo8)|
 | ViT-S                | 300 | 224 | 69.2  | 44.0 |   [Link](https://nc.mlcloud.uni-tuebingen.de/index.php/s/XLLnoCnJxp74Zqn)|
 | ViT-S-CvSt           | 300 | 224 | 72.5  | 48.1 |   [Link](https://nc.mlcloud.uni-tuebingen.de/index.php/s/agtDw3D7QXbDCmw)|
-| ConvNext-T           | 300 | 224 | 72.4  | 48.6 |   [Link](https://nc.mlcloud.uni-tuebingen.de/index.php/s/XLLnoCnJxp74Zqn)|
+| ConvNext-T           | 300 | 224 | 72.4  | 48.6 |   [Link](https://nc.mlcloud.uni-tuebingen.de/index.php/s/wSybKPAAFPoidAC)|
 | ConvNext-T-CvSt      | 300 | 224 | 72.7  | 49.5 |   [Link](https://nc.mlcloud.uni-tuebingen.de/index.php/s/BFLoMrMdn8iBk7Y)|
 | ViT-M-CvSt           | 50 | 224 | 72.4   | 48.8 |   [Link](https://nc.mlcloud.uni-tuebingen.de/index.php/s/q2mkEYtq5Zjpa4e)|
 | ConvNext-S-CvSt      | 50 | 224 | 74.1   | 52.4 |   [Link](https://nc.mlcloud.uni-tuebingen.de/index.php/s/m3bAwNg4CJY4jrp)|
