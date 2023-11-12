@@ -46,14 +46,13 @@ Note: the higher resolution numbers use the same checkpoint as for the standard 
 -------------------
 Checkpoints for ImageNet models finetuned to be robust at $\ell_\infty = 8/255$ are available here: [Link](https://nc.mlcloud.uni-tuebingen.de/index.php/s/FiTToeo4RKY896P)
 ________________________________
-<h4>Required citation</h4>
+<h4>Citation</h4>
 
 If you use our code/models cite our work using the follwoing BibTex entry:
-
-<code>@article{singh2023revisiting,
+```bibtex
+@inproceedings{singh2023revisiting,
   title={Revisiting Adversarial Training for ImageNet: Architectures, Training and Generalization across Threat Models},
   author={Singh, Naman D and Croce, Francesco and Hein, Matthias},
-  journal={arXiv preprint arXiv:2303.01870},
+  booktitle={NeurIPS},
   year={2023}}
-</code>
-
+```
