@@ -1,5 +1,6 @@
 ## Revisiting Adversarial Training for ImageNet: Architectures, Training and Generalization across Threat Models
-#### Naman D Singh, Francesco Croce, Matthias Hein -- University of Tübingen
+#### Naman D Singh, Francesco Croce, Matthias Hein 
+#### University of Tübingen
 #### NeurIPS 2023
 
 ### [Paper](https://arxiv.org/abs/2303.01870)
