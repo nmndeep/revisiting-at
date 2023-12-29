@@ -44,7 +44,7 @@ Note: the higher resolution numbers use the same checkpoint as for the standard 
 | ConvNext-L-CvSt*     | --- | 320 | 78.2  | 59.4 |   [Link](https://nc.mlcloud.uni-tuebingen.de/index.php/s/YzBpeHRrRQzHBDz)|
 ###### *: increased resolution (only for evaluation) also leads to increased FLOPs.
 -------------------
-Checkpoints for ImageNet models finetuned to be robust at $\ell_\infty = 8/255$ are available here: [Link](https://nc.mlcloud.uni-tuebingen.de/index.php/s/FiTToeo4RKY896P)
+Checkpoints along with accuracy and robustness logs for ImageNet models finetuned to be robust at $\ell_\infty = 8/255$ are available here: [Link](https://nc.mlcloud.uni-tuebingen.de/index.php/s/FiTToeo4RKY896P)
 ________________________________
 <h4>Citation</h4>
 
