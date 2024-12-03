@@ -49,7 +49,7 @@ Checkpoints along with accuracy and robustness logs for ImageNet models finetune
 ________________________________
 <h4>Citation</h4>
 
-If you use our code/models cite our work using the follwoing BibTex entry:
+If you use our code/models cite our work using the following BibTex entry:
 ```bibtex
 @inproceedings{singh2023revisiting,
   title={Revisiting Adversarial Training for ImageNet: Architectures, Training and Generalization across Threat Models},
